@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Device">
+
+    <!-- 设备查询 -->
+    <sql id="deviceBy">
+        <![CDATA[
+            SELECT
+              n.nodeid AS deviceid,
+              n.nodeType AS deviceType,
+              n.siteId AS siteId,
+              n.voltageThreshold,
+              lt.id AS locationId,
+              m.id AS `nodeInfoMemoryId`,
+              m.nodeVersion AS `version`,
+              m.isControl AS isControl,
+              m.parentIP AS parentid,
+              m.childIP AS selfid,
+              m.feedbackIP AS feedback,
+              m.sequence AS sequence,
+              m.emptyStamp AS `timeStamp`,
+              ns.stamp AS `dataTimestamp`,
+              m.interval_i AS `interval`,
+              m.rssi AS rssi,
+              m.lqi AS lqi,
+              m.lowvoltage AS voltage,
+              m.anomaly AS anomaly,
+              m.deviceMode AS `deviceMode`,
+              m.remoteIp AS remoteAddress,
+              m.remotePort AS remotePort,
+              m.isThresholdAlarm AS isThresholdAlarm,
+              n.isHumCompensate AS humCompensate
+            FROM
+              m_nodeinfo AS n
+              INNER JOIN m_nodeinfomemory AS m
+                ON n.nodeid = m.nodeid
+              LEFT JOIN m_nodesensor AS ns
+                ON n.nodeid = ns.nodeid
+              LEFT JOIN m_location AS lt
+                ON n.nodeid = lt.nodeId
+			WHERE
+			  n.nodeid = #{deviceId}
+            GROUP BY n.nodeid
+		 ]]>
+    </sql>
+
+    <sql id="deviceBy2">
+        <![CDATA[
+            SELECT
+              n.nodeid AS deviceid,
+              n.nodeType AS deviceType,
+              n.siteId AS siteId,
+              n.voltageThreshold,
+              lt.id AS locationId,
+              m.id AS `nodeInfoMemoryId`,
+              m.nodeVersion AS `version`,
+              m.isControl AS isControl,
+              m.parentIP AS parentid,
+              m.childIP AS selfid,
+              m.feedbackIP AS feedback,
+              m.sequence AS sequence,
+              m.emptyStamp AS `timeStamp`,
+              ns.stamp AS `dataTimestamp`,
+              m.interval_i AS `interval`,
+              m.rssi AS rssi,
+              m.lqi AS lqi,
+              m.lowvoltage AS voltage,
+              m.anomaly AS anomaly,
+              m.deviceMode AS `deviceMode`,
+              m.remoteIp AS remoteAddress,
+              m.remotePort AS remotePort,
+              m.isThresholdAlarm AS isThresholdAlarm,
+              n.isHumCompensate AS humCompensate
+            FROM
+              m_nodeinfo AS n
+              INNER JOIN m_nodeinfomemory AS m
+                ON n.nodeid = m.nodeid
+              LEFT JOIN m_nodesensor AS ns
+                ON n.nodeid = ns.nodeid
+              LEFT JOIN m_location AS lt
+                ON n.nodeid = lt.nodeId
+            GROUP BY n.nodeid
+		 ]]>
+    </sql>
+
+    <!-- 根据deviceId获取设备属性 -->
+    <select id="findDeviceById" parameterType="java.lang.String" resultType="DeviceBean">
+        <include refid="deviceBy"/>
+	</select>
+
+    <select id="findDeviceAll" resultType="DeviceBean">
+        <include refid="deviceBy2"/>
+    </select>
+
+    <select id="findUploadState" parameterType="java.lang.String" resultType="java.lang.Integer">
+        <![CDATA[
+          SELECT
+          uploadState
+          FROM
+          m_nodeinfo
+          WHERE nodeid = #{value}
+        ]]>
+    </select>
+
+    <!-- 创建设备信息表 -->
+    <update id="createDeviceStatusTable" parameterType="java.lang.String">
+    <![CDATA[
+        CREATE TABLE IF NOT EXISTS `m_device_${value}` (
+          id INT (11) NOT NULL AUTO_INCREMENT,
+          nodeId VARCHAR (15) NOT NULL COMMENT '产品入网唯一标识=接入点号（8位）+ip号（5位）',
+          `timestamp` TIMESTAMP NOT NULL COMMENT '时间戳',
+          nodeVersion TINYINT NOT NULL COMMENT '节点协议版本号',
+          parentIP int(5) NOT NULL COMMENT '父节点IP号',
+          selfIP int(5) NOT NULL COMMENT '当前节点IP号',
+          `sequence` TINYINT UNSIGNED NOT NULL COMMENT '包序列号',
+          workInterval INT(11) NOT NULL DEFAULT 600 COMMENT '工作周期',
+          deviceMode TINYINT NOT NULL DEFAULT 0 COMMENT '0：正常模式 1：巡检模式',
+          rssi SMALLINT NOT NULL COMMENT '接收信号强度',
+          lqi SMALLINT NOT NULL COMMENT '连接质量参数',
+          voltage FLOAT NOT NULL DEFAULT - 1 COMMENT '电压：-1、无电压值，其他的、电压值',
+          anomaly TINYINT NOT NULL DEFAULT 0 COMMENT '设备状态：-1、超时, 0、正常, 1、低电压, 2、掉电',
+          sdCardState TINYINT NOT NULL DEFAULT 0 COMMENT 'SD卡状态：0未插卡或卡未插好 1卡已插好 2卡已写满',
+          remoteHost VARCHAR (15) NOT NULL DEFAULT '192.168.0.1' COMMENT '网关IP',
+          remotePort SMALLINT UNSIGNED NOT NULL DEFAULT 10000 COMMENT '网关数据监听端口',
+          dataVersion INT (11) NOT NULL DEFAULT 0 COMMENT '数据同步版本',
+          `faultCode` varchar(100) DEFAULT NULL COMMENT '故障代码',
+          demarcate INT DEFAULT 0 NOT NULL COMMENT '0-费标定模式；1-标定模式',
+          `content` longtext DEFAULT NULL COMMENT '扩充字段',
+          PRIMARY KEY (id),
+          INDEX `timestamp` (`timestamp`)
+        ) ENGINE = INNODB DEFAULT CHARSET = utf8 COMMENT = '设备信息历史表'
+    ]]>
+    </update>
+
+    <insert id="addDeviceStatusHistory" parameterType="DeviceBean">
+    <![CDATA[
+        INSERT INTO `m_device_${deviceid}`
+                (`nodeId`,
+                 `timestamp`,
+                 `nodeVersion`,
+                 `parentIP`,
+                 `selfIP`,
+                 `sequence`,
+                 `workInterval`,
+                 `deviceMode`,
+                 `rssi`,
+                 `lqi`,
+                 `voltage`,
+                 `anomaly`,
+                 `sdCardState`,
+                 `remoteHost`,
+                 `remotePort`,
+                 faultCode,
+                 content,
+                 demarcate)
+        VALUES (#{deviceid},
+                #{timeStamp},
+                #{version},
+                #{parentid},
+                #{selfid},
+                #{sequence},
+                #{interval},
+                #{deviceMode},
+                #{rssi},
+                #{lqi},
+                #{voltage},
+                #{anomaly},
+                #{sdCardState},
+                #{remoteAddress},
+                #{remotePort},
+                #{faultCode},
+                #{content},
+                #{demarcate});
+    ]]>
+    </insert>
+
+    <update id="updateDeviceType" parameterType="DeviceBean">
+    <![CDATA[
+        UPDATE
+          m_nodeinfo
+        SET
+          nodeType = #{deviceType}
+        WHERE
+          nodeid = #{deviceid}
+    ]]>
+    </update>
+
+    <update id="updateDeviceSn" parameterType="java.util.Map">
+        <![CDATA[
+        UPDATE
+          m_nodeinfo
+        SET
+          sn = #{sn}
+        WHERE
+          nodeid = #{deviceId}
+    ]]>
+    </update>
+
+    <update id="updateUploadState" parameterType="java.lang.String">
+        <![CDATA[
+        UPDATE
+          m_nodeinfo
+        SET
+          uploadState = 1
+        WHERE
+          nodeid = #{deviceId}
+    ]]>
+    </update>
+
+    <insert id="saveConditionRefl" parameterType="java.util.Map">
+    <![CDATA[
+       INSERT INTO `m_control_module_condition_rfl`
+            (`id`,
+             `node_id`,
+             `route`,
+             `sub_node_id`,
+             `sensorId`,
+             `lowLeft`,
+             `low`,
+             `lowRight`,
+             `lowTarget`,
+             `highLeft`,
+             `high`,
+             `highRight`,
+             `highTarget`,
+             `action`,
+             `update_time`)
+        VALUES (#{id},
+                #{deviceId},
+                #{refl.route},
+                #{refl.subTerminalId},
+                #{refl.sensorId},
+                #{refl.lowLeft},
+                #{refl.low},
+                #{refl.lowRight},
+                #{refl.lowTarget},
+                #{refl.highLeft},
+                #{refl.high},
+                #{refl.highRight},
+                #{refl.highTarget},
+                #{refl.action},
+                #{refl.updateTime});
+    ]]>
+    </insert>
+
+    <update id="setHumCompensate" parameterType="java.util.Map">
+            UPDATE
+              m_nodeinfo
+            SET
+              isHumCompensate = #{flag} where nodeid = #{deviceId}
+    </update>
+
+    <update id="updateConditionRefl" parameterType="java.util.Map">
+    <![CDATA[
+        UPDATE `m_control_module_condition_rfl`
+        SET
+          `route` = #{refl.route},
+          `sub_node_id` = #{refl.subTerminalId},
+          `sensorId` = #{refl.sensorId},
+          `lowLeft` = #{refl.lowLeft},
+          `low` = #{refl.low},
+          `lowTarget` = #{refl.lowTarget},
+          `lowRight` = #{refl.lowRight},
+          `highLeft` = #{refl.highLeft},
+          `high` = #{refl.high},
+          `highRight` = #{refl.highRight},
+          `highTarget` = #{refl.highTarget},
+          `action` = #{refl.action},
+          `update_time` = #{refl.updateTime}
+        WHERE `id` = #{id};
+    ]]>
+    </update>
+
+    <select id="findConditionRefl" parameterType="java.util.Map" resultType="ConditionRefl">
+    <![CDATA[
+        SELECT
+          `id`,
+          `node_id`,
+          `route`,
+          `sub_node_id` AS subTerminalId,
+          `sensorId`,
+          `lowLeft`,
+          `low`,
+          `lowRight`,
+          `highLeft`,
+          `high`,
+          `highRight`,
+          `action`,
+          `update_time`
+        FROM `m_control_module_condition_rfl`
+        WHERE node_id = #{deviceId}
+        AND route = #{route}
+    ]]>
+    </select>
+
+    <select id="findZoneName" parameterType="string" resultType="string">
+        <![CDATA[
+            SELECT
+              tz.`zoneName`
+            FROM
+              `m_nodeinfo` AS mn
+            inner join m_location
+            on mn.nodeid=l.nodeid
+            inner JOIN `t_zone` AS tz
+            ON l.zoneId = tz.`zoneId`
+            WHERE mn.nodeId = #{nodeId}
+        ]]>
+    </select>
+
+    <insert id="addLocationBindRelationShip" parameterType="java.util.Map">
+        <![CDATA[
+            INSERT INTO `m_location_history` (id,locationId,nodeId,startTime,endTime)
+			  VALUES ((SELECT UUID()),#{locationId},#{nodeId},#{startTime},#{endTime});
+        ]]>
+    </insert>
+
+    <select id="findDeviceId" resultType="string" parameterType="java.lang.Integer">
+        SELECT
+          nodeid
+        FROM
+          `m_nodeinfo`
+        WHERE sn = #{sn}
+        LIMIT 1
+    </select>
+
+    <select id="findBySiteId" parameterType="java.lang.String" resultType="ttNodeinfo">
+        <![CDATA[
+            SELECT
+              nodeid,
+              nodeType
+            FROM
+              m_nodeinfo
+            WHERE siteId = #{siteId} ;
+        ]]>
+    </select>
+
+    <!-- 根据主模块id查询从模块 -->
+    <select id="findSlaveModule" parameterType="java.lang.String" resultType="DeviceBean">
+        <![CDATA[
+			SELECT
+              n.nodeid AS deviceid,
+              n.nodeType AS deviceType,
+              n.siteId AS siteId,
+              n.voltageThreshold,
+              lt.id AS locationId,
+              m.id AS `nodeInfoMemoryId`,
+              m.nodeVersion AS `version`,
+              m.isControl AS isControl,
+              m.parentIP AS parentid,
+              m.childIP AS selfid,
+              m.feedbackIP AS feedback,
+              m.sequence AS sequence,
+              m.emptyStamp AS `timeStamp`,
+              ns.stamp AS `dataTimestamp`,
+              m.interval_i AS `interval`,
+              m.rssi AS rssi,
+              m.lqi AS lqi,
+              m.lowvoltage AS voltage,
+              m.anomaly AS anomaly,
+              m.deviceMode AS `deviceMode`,
+              m.remoteIp AS remoteAddress,
+              m.remotePort AS remotePort,
+              m.isThresholdAlarm AS isThresholdAlarm
+            FROM
+              m_nodeinfo AS n
+              INNER JOIN m_nodeinfomemory AS m
+                ON n.nodeid = m.nodeid
+              LEFT JOIN m_nodesensor AS ns
+                ON n.nodeid = ns.nodeid
+              LEFT JOIN m_location AS lt
+                ON n.nodeid = lt.nodeId
+			WHERE
+			    m.parentIP = (SELECT
+			    				m.childIP
+							FROM
+								m_nodeinfo AS n
+							INNER JOIN
+								m_nodeinfomemory AS m ON n.nodeid = m.nodeid
+							WHERE
+								n.nodeid = #{masterModuleDeviceId})
+			AND n.siteId = (SELECT
+			    				n.siteId
+							FROM
+								m_nodeinfo AS n
+							WHERE
+								n.nodeid = #{masterModuleDeviceId})
+			AND n.nodeType = 4
+			GROUP BY n.nodeid
+			ORDER BY
+				n.nodeid ASC
+        ]]>
+    </select>
+</mapper>

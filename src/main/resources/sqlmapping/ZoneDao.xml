@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="Zone">
+    <select id="findZone" parameterType="java.lang.String" resultType="Zone">
+        SELECT zoneId, siteId, parentId, zoneName FROM t_zone WHERE zoneId = #{id};
+    </select>
+    <select id="findZoneNameById" parameterType="java.util.Map" resultType="java.lang.String">
+        SELECT
+        <if test="systemFlag == 1">
+            z.zoneName
+        </if>
+        <if test="systemFlag == 2">
+            r.name
+        </if>
+        FROM
+        <if test="systemFlag == 1">
+            t_zone AS z
+        </if>
+        <if test="systemFlag == 2">
+            sys_relic AS r
+        </if>
+        WHERE
+        <if test="systemFlag == 1">
+            z.zoneId = #{zoneId}
+        </if>
+        <if test="systemFlag == 2">
+            r.id = #{zoneId}
+        </if>
+    </select>
+</mapper>

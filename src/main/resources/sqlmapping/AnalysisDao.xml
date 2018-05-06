@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Analysis">
+
+
+
+	<!-- ===================================create======================================== -->
+
+	<!-- ===================================init======================================== -->
+	<!-- 初始化节点信息,nodeInfo -->
+	<parameterMap id="initNodeInfo-param" type="java.util.HashMap">
+		<parameter property="nodeid"/>
+		<parameter property="nodeType"/>
+		<parameter property="createtime"/>
+		<parameter property="X"/>
+		<parameter property="Y"/>
+		<parameter property="Z"/>
+		<parameter property="siteid"/>
+		<parameter property="dataVersion"/>
+		<parameter property="deviceType"/>
+	</parameterMap>
+	<insert id="initNodeInfo" parameterMap="initNodeInfo-param">
+        <![CDATA[
+		    INSERT INTO m_nodeinfo
+	            (nodeid,
+	             nodeType,
+	             createTime,
+	             `X`,
+	             `Y`,
+	             `Z`, 
+	             siteid,
+	             dataVersion,
+	             deviceType
+	             )
+			VALUES (?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?)
+		 ]]>
+	</insert>
+
+	<!-- 初始化节点实时状态，nodeinfomemory -->
+	<parameterMap id="addSensorMemory-param" type="java.util.HashMap">
+		<parameter property="id"/>
+		<parameter property="nodeid"/>
+		<parameter property="nodeVersion"/>
+		<parameter property="isControl"/>
+		<parameter property="parentIP"/>
+		<parameter property="childIP"/>
+		<parameter property="feedbackIP"/>
+		<parameter property="sequence"/>
+		<parameter property="stamp"/>
+		<parameter property="emptyStamp"/>
+		<parameter property="interval_i"/>
+		<parameter property="rssi"/>
+		<parameter property="lqi"/>
+		<parameter property="lowvoltage"/>
+		<parameter property="anomaly"/>
+		<parameter property="remoteIp"/>
+		<parameter property="remotePort"/>
+        <parameter property="isThresholdAlarm"/>
+		<parameter property="sdCardState"/>
+	</parameterMap>
+	<insert id="addSensorMemory" parameterMap="addSensorMemory-param">
+        <![CDATA[
+		   	 INSERT INTO m_nodeinfomemory
+	            (id,
+	             nodeid,
+	             nodeVersion,
+	             isControl,
+	             parentIP,
+	             childIP,
+	             feedbackIP,
+	             sequence,
+	             stamp,
+	             emptyStamp,
+	             interval_i,
+	             rssi,
+	             lqi,
+	             lowvoltage,
+	             anomaly,
+	             remoteIp,
+	             remotePort,
+	             isThresholdAlarm,
+	             sdCardState)
+			VALUES (?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?,
+			        ?)
+		 ]]>
+	</insert>
+
+	<!-- 初始化(批量)节点传感信息,nodesensor -->
+	<insert id="initNodeSensorList" parameterType="java.util.List">
+        <![CDATA[
+		INSERT INTO m_nodesensor
+            (id,
+             nodeid,
+             sensorPhysicalid,
+             sensorPhysicalValue,
+             state,
+             stamp,
+             dataVersion)
+		VALUES 
+		 ]]>
+		 <foreach collection="list" item="item" separator=",">
+         <![CDATA[
+			(#{item.id},
+			 #{item.nodeid},
+			 #{item.sensorPhysicalid},
+			 #{item.sensorPhysicalValue},
+			 #{item.state},
+			 #{item.stamp},
+			 #{item.dataVersion})
+		 ]]>
+		</foreach>
+	</insert>
+
+    <!-- 初始化(批量)位置点传感信息,locationSensor -->
+    <insert id="initLocationSensorList" parameterType="java.util.List">
+        <![CDATA[
+		INSERT INTO m_location_sensor
+            (id,
+             locationId,
+             sensorPhysicalid,
+             sensorPhysicalValue,
+             state,
+             stamp,
+             dataVersion)
+		VALUES
+		 ]]>
+        <foreach collection="list" item="item" separator=",">
+            <![CDATA[
+			(#{item.id},
+			 #{item.locationId},
+			 #{item.sensorPhysicalid},
+			 #{item.sensorPhysicalValue},
+			 #{item.state},
+			 #{item.stamp},
+			 #{item.dataVersion})
+		 ]]>
+        </foreach>
+    </insert>
+
+	<!-- 添加历史数据 -->
+	<insert id="addNodeData" parameterType="NodeVo">
+        <![CDATA[
+		     INSERT INTO `${nodeid}`
+		      (nodeid,sensorPhysicalid,sensorPhysicalvalue,lowvoltage,createtime,state,anomaly)
+		     VALUES(#{nodeid},#{sensorPhysicalid},#{sensorvalue},#{lowvoltage},#{time},#{state},#{anomaly})
+		 ]]>
+	</insert>
+
+    <!-- 将一包数据的各个监测指标批量入库 -->
+    <insert id="addNodeDatas" parameterType="java.util.Map">
+        <![CDATA[
+            REPLACE INTO `${locationId}`
+		      (nodeid,sensorPhysicalid,sensorPhysicalvalue,lowvoltage,createtime,state,anomaly)
+		      VALUES
+		 ]]>
+         <foreach collection="sensorValues" item="item" separator=", ">
+        (#{nodeid}, #{item.sensorPhysicalId}, #{item.value}, #{voltage}, #{time}, #{item.state}, #{anomaly})
+        </foreach>
+    </insert>
+
+	<!-- ===================================update======================================== -->
+	<!-- 标示该节点长时间未收到数据可能发生异常,m_nodeinfomemory -->
+	<update id="anomalySetting" parameterType="java.util.HashMap">
+        <![CDATA[
+		   	UPDATE m_nodeinfomemory
+			SET 
+				anomaly = #{anomaly},
+				emptyStamp = #{timefordb}
+			WHERE 
+				id =#{id}
+		 ]]>
+	</update>
+	<update id="anomalySettingAndVersion" parameterType="java.util.HashMap">
+        <![CDATA[
+		   	UPDATE m_nodeinfomemory
+			SET 
+				anomaly = #{anomaly},
+				emptyStamp = #{timefordb},
+				dataVersion = #{dataVersion}
+			WHERE 
+				id =#{id}
+		 ]]>
+	</update>
+
+
+
+	<!-- 更新设备实时状态，nodeinfomemory -->
+	<parameterMap id="updateSensorMemory-param" type="java.util.HashMap">
+		<parameter property="nodeVersion"/>
+		<parameter property="isControl"/>
+		<parameter property="parentIP"/>
+		<parameter property="childIP"/>
+		<parameter property="feedbackIP"/>
+		<parameter property="sequence"/>
+		<parameter property="stamp"/>
+		<parameter property="emptyStamp"/>
+		<parameter property="warmUp"/>
+		<parameter property="interval_i"/>
+		<parameter property="rssi"/>
+		<parameter property="lqi"/>
+		<parameter property="lowvoltage"/>
+		<parameter property="anomaly"/>
+		<parameter property="deviceMode"/>
+		<parameter property="remoteIp"/>
+		<parameter property="remotePort"/>
+        <parameter property="isThresholdAlarm"/>
+		<parameter property="sdCardState"/>
+		<parameter property="dataVersion"/>
+		<parameter property="demarcate"/>
+        <parameter property="sensitivity"/>
+        <parameter property="id"/>
+	</parameterMap>
+	<update id="updateMermoryInfo" parameterMap="updateSensorMemory-param">
+        <![CDATA[
+			UPDATE
+			  m_nodeinfomemory
+			SET
+			  nodeVersion = ?,
+			  isControl = ?,
+			  parentIP = ?,
+			  childIP = ?,
+			  feedbackIP = ?,
+			  sequence = ?,
+			  stamp = ?,
+			  emptyStamp = ?,
+			  warmUp = ?,
+			  interval_i = ?,
+			  rssi = ?,
+			  lqi = ?,
+			  lowvoltage = ?,
+			  anomaly = ?,
+			  deviceMode = ?,
+			  remoteIp = ?,
+			  remotePort = ?,
+			  isThresholdAlarm = ?,
+			  sdCardState = ?,
+			  dataVersion = ?,
+			  demarcate = ?,
+			  sensitivity = ?
+			WHERE id = ?
+		 ]]>
+	</update>
+
+	<!-- 更新节点传感信息,m_nodesensor -->
+	<parameterMap id="updateSensorMemory-params" type="java.util.HashMap">
+		<parameter property="sensorPhysicalvalue"/>
+		<parameter property="state"/>
+		<parameter property="stamp"/>
+		<parameter property="nodeid"/>
+		<parameter property="sensorPhysicalid"/>
+	</parameterMap>
+	<update id="updateSensorMemory" parameterMap="updateSensorMemory-params">
+        <![CDATA[
+			UPDATE
+			    m_nodesensor
+			SET
+			    sensorPhysicalvalue = ?, 
+				state = ?,
+				stamp = ?
+			WHERE 
+				nodeid = ? and 
+				sensorPhysicalid = ?
+		 ]]>
+	</update>
+
+	<!-- 更新nodesensor,数据同步版本号+1 -->
+	<parameterMap id="updateSensorMemoryPlus-param" type="java.util.HashMap">
+		<parameter property="sensorPhysicalvalue"/>
+		<parameter property="stamp"/>
+		<parameter property="state"/>
+		<parameter property="dataVersion"/>
+        <parameter property="id"/>
+	</parameterMap>
+	<update id="updateSensorMemoryPlus" parameterMap="updateSensorMemoryPlus-param">
+        <![CDATA[
+			UPDATE
+			    m_nodesensor
+			SET
+			    sensorPhysicalvalue = ?, 
+			    stamp = ?,
+				state = ?,
+				dataVersion = ?
+			WHERE
+			    id = ?
+		 ]]>
+	</update>
+	<!-- ===================================update======================================== -->
+
+	<!-- ===================================Query======================================== -->
+
+	<!-- 【fun_pt100_mapping】通过欧姆值计算对应PT100温度值 -->
+	<select id="pt100Mapping" parameterType="java.lang.Double" resultType="java.lang.Double">
+        <![CDATA[
+		    select fun_pt100_mapping(#{value}) as fun
+		 ]]>
+	</select>
+
+    <!-- TODO 可能没用 @gaohui 2013-11-08 -->
+	<!-- 获取精度 -->
+	<select id="getPrecison" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT
+		     	sensorPrecision 
+		     FROM 
+		     	m_sensorinfo 
+		     WHERE
+		      	sensorPhysicalid = #{sensorPhysicalid} 
+		 ]]>
+	</select>
+	<!-- ===================================Query======================================== -->
+
+
+
+	<!-- ===================================Query数据版本相关======================================== -->
+	<!-- 查询表数据版本号,log_transfer -->
+	<select id="getDataVersion" parameterType="java.lang.String" resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT
+				dataVersion 
+			 FROM 
+				log_transfer 
+		     WHERE 
+				tableName = #{value}
+		 ]]>
+	</select>
+
+    <!-- 根据节点id批量批量各个监测指标版本号 -->
+    <select id="getNodeSensorDataVersions" parameterType="java.util.Map" resultType="java.util.HashMap">
+        <![CDATA[
+		     SELECT
+				sensorPhysicalid,
+				dataVersion
+			 FROM
+				m_nodesensor
+		     WHERE
+				nodeid = #{nodeid}
+		 ]]>
+    </select>
+	<!-- ===================================数据版本相关======================================== -->
+
+	<!-- ====================================SD回补相关=============================================== -->
+
+    <update id="updateDataFileRecord" parameterType="java.util.HashMap" >
+        <![CDATA[
+              UPDATE
+                  m_upload_files m
+              SET
+                  m.`analysisSign` = #{analysisSign}
+              WHERE m.`filename` = #{filename};
+        ]]>
+    </update>
+
+    <select id="getFileRecords"  parameterType="java.util.HashMap" resultType="DataFile">
+        <![CDATA[
+              SELECT
+                  m.id,
+                  m.filename,
+                  m.`uploadTime`,
+                  m.`analysisSign`
+              FROM
+                  m_upload_files m
+              WHERE m.`analysisSign` = 0;
+        ]]>
+    </select>
+
+</mapper>

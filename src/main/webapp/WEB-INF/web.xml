@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath*:appContext.xml</param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    <listener>
+        <listener-class>com.microwise.msp.hardware.servlet.MicrowiseListener</listener-class>
+    </listener>
+
+    <!-- struts 配置 -->
+    <filter>
+        <filter-name>struts2</filter-name>
+        <filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>struts2</filter-name>
+        <url-pattern>/struts/*</url-pattern>
+    </filter-mapping>
+
+
+    <!-- cxf -->
+    <servlet>
+        <servlet-name>CXFServlet</servlet-name>
+        <servlet-class>
+            org.apache.cxf.transport.servlet.CXFServlet
+        </servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>CXFServlet</servlet-name>
+        <url-pattern>/services/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>indexServlet</servlet-name>
+        <servlet-class>com.microwise.msp.hardware.servlet.IndexServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>status</servlet-name>
+        <servlet-class>com.microwise.msp.hardware.servlet.StatusServlet</servlet-class>
+    </servlet>
+
+    <servlet>
+        <servlet-name>network-topo</servlet-name>
+        <servlet-class>com.microwise.msp.hardware.servlet.NetworkTopoServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>network-topo-ajax</servlet-name>
+        <servlet-class>com.microwise.msp.hardware.servlet.NetworkTopoAjaxServlet</servlet-class>
+    </servlet>
+	<!--<servlet>-->
+		<!--<servlet-name>DcoServlet</servlet-name>-->
+		<!--<servlet-class>com.microwise.msp.hardware.servlet.DcoServlet</servlet-class>-->
+	<!--</servlet>-->
+	<servlet>
+		<servlet-name>DataCacheServlet</servlet-name>
+		<servlet-class>com.microwise.msp.hardware.servlet.DataCacheServlet</servlet-class>
+	</servlet>
+
+    <servlet>
+        <servlet-name>ThresholdCacheServlet</servlet-name>
+        <servlet-class>com.microwise.msp.hardware.servlet.ThresholdCacheServlet</servlet-class>
+    </servlet>
+    <servlet>
+		<servlet-name>DaemonServlet</servlet-name>
+		<servlet-class>com.microwise.msp.hardware.servlet.DaemonServlet</servlet-class>
+	</servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>indexServlet</servlet-name>
+        <!-- 有意为空，映射到 root (tomcat6下有问题, 请切换到tomcat7) -->
+        <url-pattern>/index</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>status</servlet-name>
+        <url-pattern>/status.json</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>network-topo</servlet-name>
+        <url-pattern>/network-topo</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>network-topo-ajax</servlet-name>
+        <url-pattern>/network-topo.json</url-pattern>
+    </servlet-mapping>
+
+	<!--<servlet-mapping>-->
+		<!--<servlet-name>DcoServlet</servlet-name>-->
+		<!--<url-pattern>/servlet/DcoServlet</url-pattern>-->
+	<!--</servlet-mapping>-->
+	<servlet-mapping>
+		<servlet-name>DataCacheServlet</servlet-name>
+		<url-pattern>/fetchData</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>DaemonServlet</servlet-name>
+		<url-pattern>/daemonServlet</url-pattern>
+	</servlet-mapping>
+
+
+    <servlet-mapping>
+        <servlet-name>ThresholdCacheServlet</servlet-name>
+        <url-pattern>/thresholdCacheServlet</url-pattern>
+    </servlet-mapping>
+
+    <welcome-file-list>
+        <welcome-file>to-index.jsp</welcome-file>
+    </welcome-file-list>
+
+</web-app>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Formula">
+
+    <select id="findBySensorId" parameterType="java.util.Map" resultType="Formula">
+    <![CDATA[
+        SELECT
+          fs.formula_id AS id,
+          f.`name` AS `name`,
+          f.description AS description,
+          fs.sensor_id AS sensorId,
+          fs.device_id AS deviceId,
+          fs.min_x AS minX,
+          fs.max_x AS maxX,
+          fs.x_range_type AS xRangeType,
+          fs.min_y AS minY,
+          fs.max_y AS maxY,
+          fs.y_range_type AS yRangeType,
+          fs.sign_type AS signType,
+          f.paramCount AS paramCount
+        FROM
+          m_formula_sensor fs
+        INNER JOIN m_formula f
+            ON f.id = fs.`formula_id`
+        WHERE fs.device_id = #{deviceId}
+          AND fs.sensor_id = #{sensorId}
+    ]]>
+    </select>
+
+    <select id="findAllByDeviceId" parameterType="string" resultType="Formula">
+    <![CDATA[
+        SELECT
+          fs.formula_id AS id,
+          fs.sensor_id AS sensorId,
+          fs.device_id AS deviceId,
+          fs.min_x AS minX,
+          fs.max_x AS maxX,
+          fs.x_range_type AS xRangeType,
+          fs.min_y AS minY,
+          fs.max_y AS maxY,
+          fs.y_range_type AS yRangeType,
+          fs.sign_type AS signType,
+          f.paramCount AS paramCount
+        FROM
+          m_formula_sensor fs
+        INNER JOIN m_formula f
+            ON f.id = fs.`formula_id`
+        WHERE fs.device_id = #{deviceId}
+    ]]>
+    </select>
+
+    <select id="findParamsBySensorId" parameterType="java.util.Map" resultType="java.util.Map">
+    <![CDATA[
+        SELECT
+          fp.`name` AS `name`,
+          fp.`value` AS `value`
+        FROM
+          m_formula_param fp
+        WHERE fp.device_id = #{deviceId}
+          AND fp.sensor_id = #{sensorId}
+        ORDER BY fp.`name` ;
+    ]]>
+    </select>
+
+    <select id="findParamsByDeviceId" parameterType="string" resultType="java.util.Map">
+    <![CDATA[
+        SELECT
+          fp.sensor_id AS sensorId,
+          fp.`name` AS `name`,
+          fp.`value` AS `value`
+        FROM
+          m_formula_param fp
+        WHERE fp.device_id = #{deviceId}
+        ORDER BY fp.sensor_id, fp.`name` ;
+    ]]>
+    </select>
+
+    <delete id="deleteParamsByDeviceIdAndSensorId" parameterType="java.util.Map">
+    <![CDATA[
+        DELETE FROM m_formula_param WHERE device_id = #{deviceId} AND sensor_id = #{sensorId}
+    ]]>
+    </delete>
+
+    <insert id="saveCustomParam" parameterType="java.util.Map">
+    <![CDATA[
+        INSERT INTO `m_formula_param`(
+            `device_id`,
+            `sensor_id`,
+            `name`,
+            `value`)
+        VALUES (
+            #{deviceId},
+            #{sensorId},
+            #{name},
+            #{value});
+    ]]>
+    </insert>
+
+</mapper>

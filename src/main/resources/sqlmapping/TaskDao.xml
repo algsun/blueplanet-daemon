@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Task">
+
+    <insert id="addTask" parameterType="Task" useGeneratedKeys="true" keyProperty="id">
+       <![CDATA[
+        INSERT INTO `t_task`
+        (`taskTitle`,
+        `taskInfo`,
+        `releaseDate`,
+        `endDate`,
+        `releaser`,
+        `completeStatus`,
+        `state`,
+        `logicGroupId`)
+        VALUES
+        (#{taskTitle},
+        #{taskInfo},
+        #{releaseDate},
+        #{endDate},
+        #{releaser},
+        #{completeStatus},
+        #{state},
+        #{logicGroupId});
+        ]]>
+    </insert>
+
+    <insert id="addTaskDesignee" parameterType="java.util.Map">
+        <![CDATA[
+        INSERT INTO `t_task_designee` (taskId, designee) VALUES (#{taskId}, #{designee});
+        ]]>
+    </insert>
+
+</mapper>

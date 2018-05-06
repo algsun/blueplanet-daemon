@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="User">
+    <select id="findById" parameterType="int" resultType="User">
+        <![CDATA[
+        SELECT
+            u.`id`,
+            u.`userPassword`,
+            u.`userName`,
+            u.`userEmail` AS email,
+            u.`mobile`,
+            u.`isDisable`,
+            u.`sex`,
+            u.`createTime`,
+            u.`token`,
+            u.`isActive`,
+            u.`photo`,
+            u.`departmentId`
+        FROM
+            t_users as u
+        WHERE
+            u.id = #{id}
+        ]]>
+    </select>
+
+    <select id="findSiteManager" parameterType="int" resultType="User">
+        <![CDATA[
+        SELECT
+            u.`id`,
+            u.`userPassword`,
+            u.`userName`,
+            u.`userEmail` AS email,
+            u.`mobile`,
+            u.`isDisable`,
+            u.`sex`,
+            u.`createTime`,
+            u.`token`,
+            u.`isActive`,
+            u.`photo`,
+            u.`departmentId`
+        FROM
+          t_users u,
+          t_roles r,
+          t_user_role ur
+        WHERE u.id= ur.userId
+          AND r.id=ur.roleId
+          AND u.logicGroupId = #{logicGroupId}
+          AND r.isManager = 1
+        ]]>
+    </select>
+</mapper>

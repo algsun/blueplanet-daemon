@@ -1,0 +1,1970 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- 数据同步SqlMapping --><!--Converted at: Fri Jul 19 15:52:06 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataTransfer">
+
+    <!-- 获取nodeinfo+nodeinfomemory，以nodeinfomemory数据版本为依据 -->
+    <select id="getNodeInfoAndMemoryInfoList" resultType="nodeinfoAndNodeInfoMemory">
+        <![CDATA[
+
+
+
+			 SELECT
+			 	   my.id,
+			       mo.nodeid,
+			       mo.nodeType,
+			       mo.createTime,
+			       mo.X,
+			       mo.y,
+			       mo.z,
+			       mo.siteId,
+			       mo.deviceImage,
+			       mo.binding,
+			       mo.isActive,
+			       my.nodeVersion,
+			       my.isControl,
+			       my.parentIP,
+			       my.childIP,
+			       my.feedbackIP,
+			       my.sequence,
+			       my.stamp,
+			       my.emptyStamp,
+			       my.interval_i,
+			       my.rssi,
+			       my.lqi,
+			       my.lowvoltage,
+			       my.anomaly,
+			       my.deviceMode,
+			       my.remoteIp,
+			       my.remotePort,
+			       my.sdCardState,
+			       my.dataVersion
+			 FROM 
+				   m_nodeinfo mo,
+				   m_nodeinfomemory my 
+			 WHERE 
+			       mo.nodeid = my.nodeid
+			 AND 
+				   (my.dataVersion = 0 OR my.dataVersion > #{dataVersion})
+
+
+
+        ]]>
+	</select>
+
+    <select id="getCurrentSite" resultType="ttsiteinfo">
+        <![CDATA[
+
+
+
+		      SELECT
+		      		so.siteId,
+		      		so.siteName,
+		      		so.isCurrentSite,
+		      		so.targetHost,
+		      		so.isActive
+      		 FROM 
+		      		t_siteinfo so 
+
+
+
+        ]]>
+	</select>
+
+    <!-- 判断数据对象(table,view等)是否存在，调用functions(fun_isExistTable) -->
+    <select id="existNodeTable" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        <![CDATA[
+
+
+
+		     SELECT  fun_isExistTable(#{value})  as  fun
+
+
+
+        ]]>
+	</select>
+
+
+    <!-- 获取当前数据库中的对象Mysql -->
+    <select id="getDataBaseObjects" parameterType="ttDataBaseObject" resultType="ttDataBaseObject">
+        <![CDATA[
+
+
+
+		    SELECT
+  			  	  table_name      as  table_name, 
+				  table_type      as  table_type,
+				  table_schema    as  table_schema
+			FROM 
+			      information_schema.tables
+			WHERE 
+			      table_schema = #{table_schema}  AND  table_type = #{table_type}
+			ORDER BY  table_name 		     
+
+
+
+        ]]>
+	</select>
+
+
+    <update id="createDeviceLink" parameterType="java.lang.String">
+        <![CDATA[
+            CREATE TABLE `${value}` (
+              `id` int(11) NOT NULL AUTO_INCREMENT,
+              `nodeId` varchar(15) NOT NULL COMMENT '产品入网唯一标识=接入点号（8位）+ip号（5位）',
+              `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '时间戳',
+              `nodeVersion` tinyint(4) NOT NULL COMMENT '节点协议版本号',
+              `parentIP` smallint(5) unsigned NOT NULL COMMENT '父节点IP号',
+              `selfIP` smallint(5) unsigned NOT NULL COMMENT '当前节点IP号',
+              `sequence` tinyint(3) unsigned NOT NULL COMMENT '包序列号',
+              `workInterval` smallint(6) NOT NULL DEFAULT '600' COMMENT '工作周期',
+              `deviceMode` tinyint(4) NOT NULL DEFAULT '0' COMMENT '0：正常模式 1：巡检模式',
+              `rssi` smallint(6) NOT NULL COMMENT '接收信号强度',
+              `lqi` smallint(6) NOT NULL COMMENT '连接质量参数',
+              `voltage` float NOT NULL DEFAULT '-1' COMMENT '电压：-1、无电压值，其他的、电压值',
+              `anomaly` tinyint(4) NOT NULL DEFAULT '0' COMMENT '设备状态：-1、超时, 0、正常, 1、低电压, 2、掉电',
+              `sdCardState` tinyint(4) NOT NULL DEFAULT '0' COMMENT 'SD卡状态：0未插卡或卡未插好 1卡已插好 2卡已写满',
+              `remoteHost` varchar(15) NOT NULL DEFAULT '192.168.0.1' COMMENT '网关IP',
+              `remotePort` smallint(5) unsigned NOT NULL DEFAULT '10000' COMMENT '网关数据监听端口',
+              `dataVersion` int(11) NOT NULL DEFAULT '0' COMMENT '数据同步版本',
+              PRIMARY KEY (`id`),
+              KEY `timestamp` (`timestamp`)
+            ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8 COMMENT='设备信息历史表'
+        ]]>
+	</update>
+
+    <!-- 创建 node(节点数据表) -->
+    <update id="createNodeTable" parameterType="java.lang.String">
+        <![CDATA[
+
+
+
+		   	CREATE TABLE  `${value}` (
+                id INT(11) NOT NULL AUTO_INCREMENT,
+                nodeid VARCHAR(20) NOT NULL COMMENT '产品入网唯一标识',
+                sensorPhysicalid INT(11) NOT NULL COMMENT '传感量标识',
+                sensorPhysicalvalue VARCHAR(30) NOT NULL COMMENT '传感量值',                
+                lowvoltage FLOAT NOT NULL DEFAULT 0 COMMENT '是否低电压 (默认为0)： 0：正常 1：低电压 2：掉电 Y=x/10(实际电压，保留小数点1位) 其他情况参考协议内容',
+                createtime DATETIME NOT NULL COMMENT '创建时间', 
+                state INT(11) NOT NULL COMMENT '传感量状态',
+                dataVersion INT(11) DEFAULT 0 COMMENT '数据版本号',
+                anomaly INT(11) NOT NULL DEFAULT '0' COMMENT '-1：超时,0：正常,1：低压,2：掉电',
+                PRIMARY KEY  (id),
+                INDEX(createtime)
+               )
+
+
+
+        ]]>
+	</update>
+
+    <!-- node，节点数据表，对应N个节点表 -->
+    <select id="getNodesForFirst" parameterType="java.lang.String" resultType="ttNode">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						as id,
+					  nodeid					as nodeid,
+					  sensorPhysicalid			as sensorPhysicalid,
+					  sensorPhysicalvalue		as sensorPhysicalvalue,					  
+					  lowvoltage				as lowvoltage,
+					  createtime				as createtime,
+					  state						as state,					  
+					  dataVersion				as dataVersion,
+					  anomaly					as anomaly
+			FROM 
+					`${value}` 
+            WHERE 	
+            		dataVersion=0
+            AND
+            		sensorPhysicalid <> -1
+			ORDER   BY createtime DESC
+			LIMIT 0,300		     
+
+
+
+        ]]>
+	</select>
+
+    <!-- 何明明2012年6月16日 添加限定只同步最新30条 -->
+    <select id="getNodesForNOFirst" parameterType="java.lang.String" resultType="ttNode">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						as id,
+					  nodeid					as nodeid,
+					  sensorPhysicalid			as sensorPhysicalid,
+					  sensorPhysicalvalue		as sensorPhysicalvalue,					  
+					  lowvoltage				as lowvoltage,
+					  createtime				as createtime,
+					  state						as state,					  
+					  dataVersion				as dataVersion,
+					  anomaly					as anomaly
+			FROM 
+					`${value}`
+            WHERE 	
+            		 (dataVersion = 0 OR dataVersion > #{dataVersion})
+            AND
+            		sensorPhysicalid <> -1
+			ORDER   BY createtime DESC
+			LIMIT 0,150
+
+
+
+        ]]>
+	</select>
+    <insert id="saveNode" parameterType="ttNode">
+        <![CDATA[
+
+
+
+			insert into `${nodeid}`
+		      (id,nodeid,sensorPhysicalid,sensorPhysicalvalue,lowvoltage,createtime,state,anomaly) 
+		     values(#{id},#{nodeid},#{sensorPhysicalid},#{sensorPhysicalvalue},#{lowvoltage},#{createtime},#{state},#{anomaly})
+
+
+
+        ]]>
+	</insert>
+
+    <insert id="saveDeviceLink" parameterType="DeviceLink">
+        <![CDATA[
+           INSERT INTO `m_device_${nodeId}`
+                    (`id`,
+                     `nodeId`,
+                     `timestamp`,
+                     `nodeVersion`,
+                     `parentIP`,
+                     `selfIP`,
+                     `sequence`,
+                     `workInterval`,
+                     `deviceMode`,
+                     `rssi`,
+                     `lqi`,
+                     `voltage`,
+                     `anomaly`,
+                     `sdCardState`,
+                     `remoteHost`,
+                     `remotePort`,
+                     `dataVersion`)
+            VALUES (#{id},
+                    #{nodeId},
+                    #{stamp},
+                    #{nodeVersion},
+                    #{parentIp},
+                    #{selfIp},
+                    #{sequence},
+                    #{workInterval},
+                    #{deviceMode},
+                    #{rssi},
+                    #{lqi},
+                    #{voltage},
+                    #{anomaly},
+                    #{sdCardState},
+                    #{remoteHost},
+                    #{remotePort},
+                    #{dataVersion});
+
+        ]]>
+	</insert>
+
+    <update id="updateNode" parameterType="ttNode">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		  `${nodeid}`
+			SET   
+					  sensorPhysicalvalue = #{sensorPhysicalvalue},
+					  lowvoltage = #{lowvoltage},
+					  createtime = #{createtime},
+					  state = #{state}
+			WHERE  
+					  id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateNodeDataVersion" parameterType="ttNode">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		`${nodeid}`
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+
+    <!-- 获取数据表的同步状态 -->
+    <select id="getLogTransfers" resultType="ttLogTransfer">
+        <![CDATA[
+
+
+
+		      SELECT
+		      			tableName    as tableName, 
+						dataVersion  as dataVersion, 
+						eventTime 	 as eventTime
+			  FROM 
+	 				    log_transfer 
+
+
+
+        ]]>
+	</select>
+    <!-- 获取一个表对应的同步状态 -->
+    <select id="getLogTransferByTableName" parameterType="java.lang.String" resultType="ttLogTransfer">
+        <![CDATA[
+
+
+
+		      SELECT
+		      			tableName    as tableName, 
+						dataVersion  as dataVersion, 
+						eventTime 	 as eventTime
+			  FROM 
+	 				    log_transfer
+	 	      WHERE     
+	 	      			tableName=#{value}			    
+
+
+
+        ]]>
+	</select>
+    <!-- Insert 一个表对应的数据同步状态 -->
+    <insert id="saveLogTransfer" parameterType="ttLogTransfer">
+        <![CDATA[
+
+
+
+		      INSERT INTO  log_transfer
+							(tableName, 
+							 dataVersion, 
+							 eventTime
+							)
+					VALUES
+							(#{tableName}, 
+							 #{dataVersion}, 
+							 #{eventTime}
+							)
+
+
+
+        ]]>
+	</insert>
+    <!-- update 一个表对应的同步状态 dataVersion -->
+    <update id="updateLogTransfer" parameterType="ttLogTransfer">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		log_transfer 
+			SET
+					dataVersion = #{dataVersion} , 
+					eventTime = #{eventTime}			
+			WHERE
+					tableName = #{tableName} 
+
+
+
+        ]]>
+	</update>
+
+    <select id="getDeviceLinks" resultType="DeviceLink" parameterType="java.util.HashMap">
+    <![CDATA[
+
+            SELECT
+              m.id,
+              m.`nodeId`,
+              m.`timestamp`,
+              m.`nodeVersion`,
+              m.`parentIP`,
+              m.`selfIP`,
+              m.`sequence`,
+              m.`workInterval`,
+              m.`deviceMode`,
+              m.`rssi`,
+              m.`lqi`,
+              m.`voltage`,
+              m.`anomaly`,
+              m.`sdCardState`,
+              m.`remoteHost`,
+              m.`remotePort`,
+              m.`dataVersion`
+            FROM
+              ${nodeId} m
+            WHERE m.`dataVersion` = 0
+              OR m.`dataVersion` > #{dataVersion}
+
+
+        ]]>
+      </select>
+
+    <!-- nodeInfo[节点信息]何明明，2012年6月15日，因510105071000108503数据量太大，暂时不同步 -->
+    <select id="getNodeinfos" resultType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    SELECT
+					  nodeid					AS nodeid,
+					  nodeType					AS nodeType,
+					  createtime				AS createtime,
+					  X							AS X,
+					  Y							AS Y,
+					  z							AS z,
+					  siteId					AS siteId,
+                      deviceImage               AS deviceImage,
+					  dataVersion				AS dataVersion,
+					  binding                   AS binging,
+					  isActive                  AS isActive
+			FROM  
+				  	  m_nodeinfo
+
+
+
+        ]]>
+	</select>
+    <select id="getNodeinfosForFirst" resultType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    SELECT
+					  nodeid					AS nodeid,
+					  nodeType					AS nodeType,
+					  createtime				AS createtime,
+					  X							AS X,
+					  Y							AS Y,
+					  z							AS z,
+					  siteId					AS siteId,
+                      deviceImage               AS deviceImage,
+					  dataVersion				AS dataVersion,
+					  binding                   AS binging,
+					  isActive                  AS isActive
+			FROM  	  
+					  m_nodeinfo  
+ 			WHERE	
+ 					  dataVersion=0
+
+
+
+        ]]>
+	</select>
+    <select id="getNodeinfosForNOFirst" parameterType="java.lang.Long" resultType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    SELECT
+					  nodeid					AS nodeid,
+					  nodeType					AS nodeType,
+					  createtime				AS createtime,
+					  X							AS X,
+					  Y							AS Y,
+					  z							AS z,
+					  siteId					AS siteId,
+                      deviceImage               AS deviceImage,
+					  dataVersion				AS dataVersion,
+					  binding                   AS binging,
+					  isActive                  AS isActive
+			FROM  
+					  m_nodeinfo  
+ 			WHERE		
+ 					  (dataVersion = 0 OR dataVersion > #{value})
+
+
+
+        ]]>
+	</select>
+    <insert id="saveNodeinfo" parameterType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_nodeinfo
+			            (
+				          nodeid,
+						  nodeType,
+						  createtime,
+						  `X`,
+						  `Y`,
+						  `z`,
+						  siteId,
+	                      deviceImage,
+						  dataVersion,
+						  binding,
+						  isActive)
+			VALUES (
+			        #{nodeid},
+			        #{nodeType},
+			        #{createtime},
+			        #{x},
+			        #{y},
+			        #{z},
+			        #{siteId},
+			        #{deviceImage},
+			        #{dataVersion},
+			        #{binding},
+			        #{isActive})
+
+
+
+        ]]>
+	</insert>
+    <update id="updateNodeinfo" parameterType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		 m_nodeinfo
+			SET
+		             nodeType = #{nodeType},
+		             createtime = #{createtime},
+		             `X` = #{x},
+		             `Y` = #{y},
+		             `z` = #{z},
+		             siteId = #{siteId},
+		             deviceImage = #{deviceImage},
+		             dataVersion = #{dataVersion},
+		             binding = #{binding},
+		             isActive = #{isActive}
+			WHERE 
+				     nodeid = #{nodeid}
+
+
+
+        ]]>
+	</update>
+    <update id="updateNodeinfoDataVersion" parameterType="ttNodeinfo">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		  m_nodeinfo
+			SET     
+				      dataVersion = #{dataVersion}
+			WHERE     
+					  nodeid = #{nodeid}
+
+
+
+        ]]>
+	</update>
+
+    <update id="updateDeviceLinkDataVersion" parameterType="DeviceLink">
+        <![CDATA[
+		    UPDATE
+		    		  `${nodeId}`
+			SET
+				      dataVersion = #{dataVersion}
+			WHERE
+					  id = #{id}
+        ]]>
+	</update>
+
+    <!-- Historydatacount -->
+    <select id="getHistorydatacountForFirst" resultType="ttHistorydatacount">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id							AS id,
+					  nodeid						AS nodeid,
+					  mingroupid					AS mingroupid,
+					  date							AS date
+			FROM  	  
+					  m_historydatacount
+			WHERE
+					  dataVersion=0
+
+
+
+        ]]>
+	</select>
+
+    <select id="getHistorydatacountsForNOFirst" parameterType="java.lang.Long" resultType="ttHistorydatacount">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id							AS id,
+					  nodeid						AS nodeid,
+					  mingroupid					AS mingroupid,
+					  date							AS date
+			FROM
+					  m_historydatacount
+			WHERE 
+					  dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+
+    <insert id="saveHistorydatacount" parameterType="ttHistorydatacount">
+        <![CDATA[
+
+
+
+		   INSERT INTO  m_historydatacount
+			         (
+			          id,
+					  nodeid,
+					  mingroupid,
+					  date)
+			VALUES (
+					#{id},
+					#{nodeid},
+			        #{mingroupid},
+			        #{date})
+
+
+
+        ]]>
+	</insert>
+    <update id="updateHistorydatacount" parameterType="ttHistorydatacount">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		  m_historydatacount
+			SET  
+					  mingroupid = #{mingroupid},
+					  date = #{date}
+			WHERE 	 
+					  nodeid = #{nodeid}
+
+
+
+        ]]>
+	</update>
+    <update id="updateHistorydatacountDataVersion" parameterType="ttHistorydatacount">
+        <![CDATA[
+
+
+
+			UPDATE
+					m_historydatacount
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					nodeid = #{nodeid}
+
+
+
+        ]]>
+	</update>
+
+    <!-- Nodeinfomemory -->
+    <select id="getNodeinfomemorysForFirst" resultType="ttNodeinfomemory">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id							AS id,
+					  nodeid						AS nodeid,
+					  nodeVersion					AS nodeVersion,
+					  isControl						AS isControl,
+					  parentIP						AS parentIP,
+					  childIP						AS childIP,
+					  feedbackIP					AS feedbackIP,
+					  sequence						AS sequence,
+					  stamp							AS stamp,
+					  emptyStamp                    AS emptyStamp,
+					  interval_i					AS interval_i,
+					  rssi							AS rssi,
+					  lqi							AS lqi,
+					  lowvoltage					AS lowvoltage,
+					  anomaly						AS anomaly,
+					  deviceMode					AS deviceMode,
+					  remoteIp						AS remoteIp,
+					  remotePort					AS remotePort,
+					  sdCardState					AS sdCardState,
+					  dataVersion					AS dataVersion
+			FROM  	  
+					  m_nodeinfomemory
+			WHERE
+					  dataVersion=0
+
+
+
+        ]]>
+	</select>
+    <select id="getNodeinfomemorysForNOFirst" parameterType="java.lang.Long" resultType="ttNodeinfomemory">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id							AS id,
+					  nodeid						AS nodeid,
+					  nodeVersion					AS nodeVersion,
+					  isControl						AS isControl,
+					  parentIP						AS parentIP,
+					  childIP						AS childIP,
+					  feedbackIP					AS feedbackIP,
+					  sequence						AS sequence,
+					  stamp							AS stamp,
+					  emptyStamp					AS emptyStamp,
+					  interval_i					AS interval_i,
+					  rssi							AS rssi,
+					  lqi							AS lqi,
+					  lowvoltage					AS lowvoltage,
+					  anomaly						AS anomaly,
+					  deviceMode					AS deviceMode,
+					  remoteIp						AS remoteIp,
+					  remotePort					AS remotePort,
+					  sdCardState					AS sdCardState,
+					  dataVersion					AS dataVersion
+			FROM      
+					  m_nodeinfomemory 
+            WHERE 
+            		  dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveNodeinfomemory" parameterType="ttNodeinfomemory">
+        <![CDATA[
+
+
+
+		   INSERT INTO  m_nodeinfomemory
+			         (
+			          id,
+					  nodeid,
+					  nodeVersion,
+					  isControl,
+					  parentIP,
+					  childIP,
+					  feedbackIP,
+					  sequence,
+					  stamp,
+					  emptyStamp,
+					  interval_i,
+					  rssi,
+					  lqi,
+					  lowvoltage,
+					  anomaly,
+					  remoteIp,
+					  remotePort,
+					  sdCardState,
+					  dataVersion)
+			VALUES (
+					#{id},
+					#{nodeid},
+			        #{nodeVersion},
+			        #{isControl},
+			        #{parentIP},
+			        #{childIP},
+			        #{feedbackIP},
+			        #{sequence},
+			        #{stamp},
+			        #{emptyStamp},
+			        #{interval_i},
+			        #{rssi},
+			        #{lqi},
+			        #{lowvoltage},
+			        #{anomaly},
+			        #{remoteIp},
+			        #{remotePort},
+			        #{sdCardState},
+			        #{dataVersion})
+
+
+
+        ]]>
+	</insert>
+    <update id="updateNodeinfomemory" parameterType="ttNodeinfomemory">
+        <![CDATA[
+
+
+
+		    UPDATE
+		    		m_nodeinfomemory
+			SET  
+					nodeVersion = #{nodeVersion},
+			        isControl = #{isControl},
+			        parentIP = #{parentIP},
+			        childIP = #{childIP},
+			        feedbackIP = #{feedbackIP},
+			        sequence = #{sequence},
+			        stamp = #{stamp},
+			        emptyStamp = #{emptyStamp},
+			        interval_i = #{interval_i},
+			        rssi = #{rssi},
+			        lqi = #{lqi},
+			        lowvoltage = #{lowvoltage},
+			        anomaly = #{anomaly},
+			        remoteIp = #{remoteIp},
+			        remotePort = #{remotePort},
+			        sdCardState = #{sdCardState}
+			WHERE 	 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateNodeinfomemoryDataVersion" parameterType="ttNodeinfomemory">
+        <![CDATA[
+
+
+
+			UPDATE
+					m_nodeinfomemory
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					nodeid = #{nodeid}
+
+
+
+        ]]>
+	</update>
+
+    <!-- Avgdata 均峰值 -->
+    <select id="getAvgdatasForFirst" resultType="ttAvgdata">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						AS id,
+					  nodeid					AS nodeid,
+					  sensorPhysicalid			AS sensorPhysicalid,
+                     `maxvalue`					AS `maxvalue`,
+					 `minvalue`					AS `minvalue`,
+					  avgvalue					AS avgvalue,
+					  wavevalue					AS wavevalue,
+					  maxTime                   AS maxTime,
+					  minTime                   AS minTime,
+					  ms_date					AS ms_date,
+					  isupdate					AS isupdate,
+					  dataVersion				AS dataVersion
+			FROM  	  
+					  m_avgdata 
+            WHERE 	  
+					  dataVersion = 0	     
+
+
+
+        ]]>
+	</select>
+    <select id="getAvgdatasForNOFirst" parameterType="java.lang.Long" resultType="ttAvgdata">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						AS id,
+					  nodeid					AS nodeid,
+					  sensorPhysicalid			AS sensorPhysicalid,
+                     `maxvalue`					AS `maxvalue`,
+					 `minvalue`					AS `minvalue`,
+					  avgvalue					AS avgvalue,
+					  wavevalue					AS wavevalue,
+					  maxTime                   AS maxTime,
+					  minTime                   AS minTime,
+					  ms_date					AS ms_date,
+					  isupdate					AS isupdate,
+					  dataVersion				AS dataVersion
+			FROM      
+					  m_avgdata
+			WHERE 	
+					  dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveAvgdata" parameterType="ttAvgdata">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_avgdata
+			            ( 
+			             id,
+			             nodeid,
+			             sensorPhysicalid,
+			             `maxvalue`,
+			             `minvalue`,
+			             maxTime,
+			             minTime,
+			             avgvalue,
+			             wavevalue,
+			             ms_date,
+			             isupdate)
+			VALUES (
+			        #{id}, 
+			        #{nodeid},
+			        #{sensorPhysicalid},
+			        #{maxvalue},
+			        #{minvalue},
+                    #{maxTime},
+                    #{minTime},
+			        #{avgvalue},
+			        #{wavevalue},
+			        #{ms_date},
+			        #{isupdate} )
+
+
+
+        ]]>
+	</insert>
+    <update id="updateAvgdata" parameterType="ttAvgdata">
+        <![CDATA[
+
+
+
+			UPDATE
+					  m_avgdata
+			SET
+					  `maxvalue` = #{maxvalue},
+					  `minvalue` = #{minvalue},
+					  avgvalue = #{avgvalue},
+					  wavevalue = #{wavevalue},
+                      maxTime=#{maxTime},
+                      minTime=#{minTime},
+					  ms_date = #{ms_date},
+					  isupdate = #{isupdate}
+			WHERE 	 
+					  id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateAvgdataDataVersion" parameterType="ttAvgdata">
+        <![CDATA[
+
+
+
+		    UPDATE
+					m_avgdata
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+
+    <!-- Tbl_lxh_acc 日照量 -->
+    <select id="getTbl_lxh_accsForFirst" resultType="ttTbl_lxh_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id					as id,
+					  nodeid				as nodeid,
+					  lx_h					as lx_h,
+					  ms_datetime			as ms_datetime,
+					  season				as season,
+					  isupdate				as isupdate,
+					  dataVersion			as dataVersion
+			FROM      
+					  m_tbl_lxh_acc 
+            WHERE 	  dataVersion=0		     
+
+
+
+        ]]>
+	</select>
+    <select id="getTbl_lxh_accsForNOFirst" parameterType="java.lang.Long" resultType="ttTbl_lxh_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id					as id,
+					  nodeid				as nodeid,
+					  lx_h					as lx_h,
+					  ms_datetime			as ms_datetime,
+					  season				as season,
+					  isupdate				as isupdate,
+					  dataVersion			as dataVersion
+			FROM      
+					  m_tbl_lxh_acc
+            WHERE 	  dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveTbl_lxh_acc" parameterType="ttTbl_lxh_acc">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_tbl_lxh_acc
+			            ( 
+			             id,
+			             nodeid,
+			             lx_h,
+			             ms_datetime,
+			             season,
+			             isupdate )
+			VALUES ( 
+			        #{id},
+			        #{nodeid},
+			        #{lx_h},
+			        #{ms_datetime},
+			        #{season},
+			        #{isupdate} ) 
+
+
+
+        ]]>
+	</insert>
+    <update id="updateTbl_lxh_acc" parameterType="ttTbl_lxh_acc">
+        <![CDATA[
+
+
+
+		    UPDATE  m_tbl_lxh_acc
+			SET   
+					  lx_h = #{lx_h},
+					  ms_datetime = #{ms_datetime},
+					  season = #{season},
+					  isupdate = #{isupdate}  
+			WHERE 	 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateTbl_lxh_accDataVersion" parameterType="ttTbl_lxh_acc">
+        <![CDATA[
+
+
+
+		    UPDATE  m_tbl_lxh_acc
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+
+    <!-- Tbl_rb_day_acc 日降雨量 -->
+    <select id="getTbl_rb_day_accsForFirst" resultType="ttTbl_rb_day_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id				as id,
+					  nodeid			as nodeid,
+					  rb				as rb,
+					  ms_date			as ms_date,
+					  isupdate			as isupdate,
+					  dataVersion		as dataVersion
+			FROM  	
+					m_tbl_rb_day_acc 
+            WHERE 	dataVersion=0
+
+
+
+        ]]>
+	</select>
+    <select id="getTbl_rb_day_accsForNOFirst" parameterType="java.lang.Long" resultType="ttTbl_rb_day_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id				as id,
+					  nodeid			as nodeid,
+					  rb				as rb,
+					  ms_date			as ms_date,
+					  isupdate			as isupdate,
+					  dataVersion		as dataVersion
+			FROM  	
+					m_tbl_rb_day_acc 
+            WHERE 	dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveTbl_rb_day_acc" parameterType="ttTbl_rb_day_acc">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_tbl_rb_day_acc
+			            ( 
+			             id,
+			             nodeid,
+			             rb,
+			             ms_date,
+			             isupdate )
+			VALUES ( 
+			        #{id},
+			        #{nodeid},
+			        #{rb},
+			        #{ms_date},
+			        #{isupdate} )
+
+
+
+        ]]>
+	</insert>
+    <update id="updateTbl_rb_day_acc" parameterType="ttTbl_rb_day_acc">
+        <![CDATA[
+
+
+
+		    UPDATE  m_tbl_rb_day_acc
+			SET 
+					  rb = #{rb},
+					  isupdate = #{isupdate} 
+			WHERE 	 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateTbl_rb_day_accDataVersion" parameterType="ttTbl_rb_day_acc">
+        <![CDATA[
+
+
+
+		    UPDATE  m_tbl_rb_day_acc
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}	
+
+
+
+        ]]>
+	</update>
+
+    <!-- Tbl_rb_hour_acc 小时降雨量 -->
+    <select id="getTbl_rb_hour_accsForFirst" resultType="ttTbl_rb_hour_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id					as id,
+					  nodeid				as nodeid,
+					  rb					as rb,
+					  ms_datetime			as ms_datetime,
+					  isupdate				as isupdate,
+					  dataVersion			as dataVersion
+			FROM  
+					m_tbl_rb_hour_acc 
+            WHERE 	dataVersion=0		     
+
+
+
+        ]]>
+	</select>
+    <select id="getTbl_rb_hour_accsForNOFirst" parameterType="java.lang.Long" resultType="ttTbl_rb_hour_acc">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id					as id,
+					  nodeid				as nodeid,
+					  rb					as rb,
+					  ms_datetime			as ms_datetime,
+					  isupdate				as isupdate,
+					  dataVersion			as dataVersion
+			FROM  
+					m_tbl_rb_hour_acc 
+            WHERE 	dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveTbl_rb_hour_acc" parameterType="ttTbl_rb_hour_acc">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_tbl_rb_hour_acc
+			            ( 
+			             id,
+			             nodeid,
+			             rb,
+			             ms_datetime,
+			             isupdate )
+			VALUES (
+			        #{id}, 
+			        #{nodeid},
+			        #{rb},
+			        #{ms_datetime},
+			        #{isupdate} )
+
+
+
+        ]]>
+	</insert>
+    <update id="updateTbl_rb_hour_acc" parameterType="ttTbl_rb_hour_acc">
+        <![CDATA[
+
+
+
+		    UPDATE    m_tbl_rb_hour_acc
+			SET   
+					  rb = #{rb},
+					  isupdate = #{isupdate}  
+			WHERE 	 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+    <update id="updateTbl_rb_hour_accDataVersion" parameterType="ttTbl_rb_hour_acc">
+        <![CDATA[
+
+
+
+		    UPDATE  m_tbl_rb_hour_acc
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}
+
+
+
+        ]]>
+	</update>
+
+    <!-- ttWindrose 风向玫瑰图 -->
+    <select id="getWindrosesForFirst" resultType="ttWindrose">
+        <![CDATA[
+
+
+
+		    SELECT
+				  id			as id,
+				  nodeid		as nodeid,
+				  O_N			as O_N,
+				  S_N			as S_N,
+				  O_NNE			as O_NNE,
+				  S_NNE			as S_NNE,
+				  O_NE			as O_NE,
+				  S_NE			as S_NE,
+				  O_ENE			as O_ENE,
+				  S_ENE			as S_ENE,
+				  O_E			as O_E,
+				  S_E			as S_E,
+				  O_ESE			as O_ESE,
+				  S_ESE			as S_ESE,
+				  O_SE			as O_SE,
+				  S_SE			as S_SE,
+				  O_SSE			as O_SSE,
+				  S_SSE			as S_SSE,
+				  O_S			as O_S,
+				  S_S			as S_S,
+				  O_SSW			as O_SSW,
+				  S_SSW			as S_SSW,
+				  O_SW			as O_SW,
+				  S_SW			as S_SW,
+				  O_WSW			as O_WSW,
+				  S_WSW			as S_WSW,
+				  O_W			as O_W,
+				  S_W			as S_W,
+				  O_WNW			as O_WNW,
+				  S_WNW			as S_WNW,
+				  O_NW			as O_NW,
+				  S_NW			as S_NW,
+				  O_NNW			as O_NNW,
+				  S_NNW			as S_NNW,
+				  windcalm		as windcalm,
+			  	  `SUM`			as sum,
+				  ms_date		as ms_date,
+				  season		as season,
+				  isupdate		as isupdate,
+				  dataVersion	as dataVersion
+			FROM    
+					m_windrose 
+            WHERE 	dataVersion=0		     
+
+
+
+        ]]>
+	</select>
+    <select id="getWindrosesForNOFirst" parameterType="java.lang.Long" resultType="ttWindrose">
+        <![CDATA[
+
+
+
+		    SELECT
+				  id			as id,
+				  nodeid		as nodeid,
+				  O_N			as O_N,
+				  S_N			as S_N,
+				  O_NNE			as O_NNE,
+				  S_NNE			as S_NNE,
+				  O_NE			as O_NE,
+				  S_NE			as S_NE,
+				  O_ENE			as O_ENE,
+				  S_ENE			as S_ENE,
+				  O_E			as O_E,
+				  S_E			as S_E,
+				  O_ESE			as O_ESE,
+				  S_ESE			as S_ESE,
+				  O_SE			as O_SE,
+				  S_SE			as S_SE,
+				  O_SSE			as O_SSE,
+				  S_SSE			as S_SSE,
+				  O_S			as O_S,
+				  S_S			as S_S,
+				  O_SSW			as O_SSW,
+				  S_SSW			as S_SSW,
+				  O_SW			as O_SW,
+				  S_SW			as S_SW,
+				  O_WSW			as O_WSW,
+				  S_WSW			as S_WSW,
+				  O_W			as O_W,
+				  S_W			as S_W,
+				  O_WNW			as O_WNW,
+				  S_WNW			as S_WNW,
+				  O_NW			as O_NW,
+				  S_NW			as S_NW,
+				  O_NNW			as O_NNW,
+				  S_NNW			as S_NNW,
+				  windcalm		as windcalm,
+			  	  `SUM`			as sum,
+				  ms_date		as ms_date,
+				  season		as season,
+				  isupdate		as isupdate,
+				  dataVersion	as dataVersion
+			FROM    
+					m_windrose 
+            WHERE 	dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveWindrose" parameterType="ttWindrose">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_windrose
+			            (
+			             id, 
+			             nodeid,
+			             O_N,
+			             S_N,
+			             O_NNE,
+			             S_NNE,
+			             O_NE,
+			             S_NE,
+			             O_ENE,
+			             S_ENE,
+			             O_E,
+			             S_E,
+			             O_ESE,
+			             S_ESE,
+			             O_SE,
+			             S_SE,
+			             O_SSE,
+			             S_SSE,
+			             O_S,
+			             S_S,
+			             O_SSW,
+			             S_SSW,
+			             O_SW,
+			             S_SW,
+			             O_WSW,
+			             S_WSW,
+			             O_W,
+			             S_W,
+			             O_WNW,
+			             S_WNW,
+			             O_NW,
+			             S_NW,
+			             O_NNW,
+			             S_NNW,
+			             windcalm,
+			             `SUM`,
+			             ms_date,
+			             season,
+			             isupdate )
+			VALUES (
+					#{id},
+			        #{nodeid},
+			        #{O_N},
+			        #{S_N},
+			        #{O_NNE},
+			        #{S_NNE},
+			        #{O_NE},
+			        #{S_NE},
+			        #{O_ENE},
+			        #{S_ENE},
+			        #{O_E},
+			        #{S_E},
+			        #{O_ESE},
+			        #{S_ESE},
+			        #{O_SE},
+			        #{S_SE},
+			        #{O_SSE},
+			        #{S_SSE},
+			        #{O_S},
+			        #{S_S},
+			        #{O_SSW},
+			        #{S_SSW},
+			        #{O_SW},
+			        #{S_SW},
+			        #{O_WSW},
+			        #{S_WSW},
+			        #{O_W},
+			        #{S_W},
+			        #{O_WNW},
+			        #{S_WNW},
+			        #{O_NW},
+			        #{S_NW},
+			        #{O_NNW},
+			        #{S_NNW},
+			        #{windcalm},
+			        #{sum},
+			        #{ms_date},
+			        #{season},
+			        #{isupdate} )
+
+
+
+        ]]>
+	</insert>
+    <update id="updateWindrose" parameterType="ttWindrose">
+        <![CDATA[
+
+
+
+		    UPDATE  m_windrose
+			SET   
+				  O_N = #{O_N},
+				  S_N = #{S_N},
+				  O_NNE = #{O_NNE},
+				  S_NNE = #{S_NNE},
+				  O_NE = #{O_NE},
+				  S_NE = #{S_NE},
+				  O_ENE = #{O_ENE},
+				  S_ENE = #{S_ENE},
+				  O_E = #{O_E},
+				  S_E = #{S_E},
+				  O_ESE = #{O_ESE},
+				  S_ESE = #{S_ESE},
+				  O_SE = #{O_SE},
+				  S_SE = #{S_SE},
+				  O_SSE = #{O_SSE},
+				  S_SSE = #{S_SSE},
+				  O_S = #{O_S},
+				  S_S = #{S_S},
+				  O_SSW = #{O_SSW},
+				  S_SSW = #{S_SSW},
+				  O_SW = #{O_SW},
+				  S_SW = #{S_SW},
+				  O_WSW = #{O_WSW},
+				  S_WSW = #{S_WSW},
+				  O_W = #{O_W},
+				  S_W = #{S_W},
+				  O_WNW = #{O_WNW},
+				  S_WNW = #{S_WNW},
+				  O_NW = #{O_NW},
+				  S_NW = #{S_NW},
+				  O_NNW = #{O_NNW},
+				  S_NNW = #{S_NNW},
+				  windcalm = #{windcalm},
+				  `SUM` = #{sum}, 
+				  season = #{season},
+				  isupdate = #{isupdate} 
+			WHERE 	 
+					nodeid = #{nodeid}       				AND 
+					ms_date = #{ms_date} 
+					 
+
+
+
+        ]]>
+	</update>
+    <update id="updateWindroseDataVersion" parameterType="ttWindrose">
+        <![CDATA[
+
+
+
+		    UPDATE  m_windrose
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					nodeid = #{nodeid}       				AND 
+					ms_date = #{ms_date}  
+
+
+
+        ]]>
+	</update>
+
+    <!-- NodeSensor -->
+    <select id="getNodesensorsForFirst" resultType="ttNodesensor">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						as id,
+					  nodeid					as nodeid,
+					  sensorPhysicalid			as sensorPhysicalid,
+					  sensorPhysicalValue		as sensorPhysicalValue,
+					  state						as state,
+					  stamp						as stamp,					  
+					  dataVersion				as dataVersion
+			FROM      
+					m_nodesensor 
+            WHERE 	dataVersion=0		     
+
+
+
+        ]]>
+	</select>
+    <select id="getNodesensorsForNOFirst" parameterType="java.lang.Long" resultType="ttNodesensor">
+        <![CDATA[
+
+
+
+		    SELECT
+					  id						as id,
+					  nodeid					as nodeid,
+					  sensorPhysicalid			as sensorPhysicalid,
+					  sensorPhysicalValue		as sensorPhysicalValue,
+					  state						as state,
+					  stamp						as stamp,					  
+					  dataVersion				as dataVersion
+			FROM      
+					m_nodesensor  
+            WHERE 	dataVersion = 0 OR dataVersion > #{value}
+
+
+
+        ]]>
+	</select>
+    <insert id="saveNodesensor" parameterType="ttNodesensor">
+        <![CDATA[
+
+
+
+		    INSERT INTO  m_nodesensor
+			            (id, 
+			             nodeid,
+			             sensorPhysicalid,
+			             sensorPhysicalValue,
+			             state,
+			             stamp )
+			VALUES (#{id}, 
+			        #{nodeid},
+			        #{sensorPhysicalid},
+			        #{sensorPhysicalValue},
+			        #{state},
+			        #{stamp}) 
+
+
+
+        ]]>
+	</insert>
+    <update id="updateNodesensor" parameterType="ttNodesensor">
+        <![CDATA[
+
+
+
+			UPDATE m_nodesensor
+			SET 
+			  nodeid = #{nodeid},
+			  sensorPhysicalid = #{sensorPhysicalid},
+			  sensorPhysicalValue = #{sensorPhysicalValue},
+			  state = #{state},
+			  stamp = #{stamp}
+			WHERE id = #{id} 
+
+
+
+        ]]>
+	</update>
+    <update id="updateNodesensorDataVersion" parameterType="ttNodesensor">
+        <![CDATA[
+
+
+
+		    UPDATE  m_nodesensor
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					id = #{id}			        
+
+
+
+        ]]>
+	</update>
+
+    <!-- logicGroup 站点组表 -->
+    <select id="getLogicGroupForFirst" resultType="logicGroup">
+        <![CDATA[
+
+
+
+				SELECT
+				       id AS id,
+				       logicGroupName AS logicGroupName,
+				       siteId AS siteId,
+				       orgCode AS orgCode,
+				       orgAddress AS orgAddress,
+				       orgZipcode AS orgZipcode,
+				       orgWebsite AS orgWebsite,
+				       orgTel AS orgTel,
+				       orgFax AS orgFax,
+				       activeState AS activeState,
+				       logicGroupType AS logicGroupType
+				FROM 
+				       t_logicgroup
+				WHERE 
+				       dataVersion=0
+				AND
+					   siteId IS NOT NULL
+
+
+
+        ]]>
+	</select>
+
+    <select id="getLogicGroupForNoFirst" parameterType="java.lang.Long" resultType="logicGroup">
+        <![CDATA[
+
+
+
+		    	SELECT
+				       id AS id,
+				       logicGroupName AS logicGroupName,
+				       siteId AS siteId,
+				       orgCode AS orgCode,
+				       orgAddress AS orgAddress,
+				       orgZipcode AS orgZipcode,
+				       orgWebsite AS orgWebsite,
+				       orgTel AS orgTel,
+				       orgFax AS orgFax,
+				       activeState AS activeState,
+				       logicGroupType AS logicGroupType
+				FROM 
+				       t_logicgroup  
+            	WHERE 	
+            		   dataVersion = 0 OR dataVersion > #{value}
+                AND
+					   siteId IS NOT NULL
+
+
+
+        ]]>
+	</select>
+    <insert id="saveLogicGroup" parameterType="logicGroup">
+        <![CDATA[
+
+
+
+		    INSERT INTO  t_logicgroup
+			            ( 
+			             logicGroupName,
+			             siteId,
+			             orgCode,
+			             orgAddress,
+			             orgZipcode,
+			             orgWebsite,
+			             orgTel,
+			             orgFax,
+			             activeState,
+			             logicGroupType )
+			VALUES (
+			        #{logicGroupName},
+			        #{siteId},
+			        #{orgCode},
+			        #{orgAddress},
+			        #{orgZipcode},
+		            #{orgWebsite},
+		            #{orgTel},
+		            #{orgFax},
+		            #{activeState},
+		            #{logicGroupType} ) 
+
+
+
+        ]]>
+	</insert>
+    <update id="updateLogicGroup" parameterType="logicGroup">
+        <![CDATA[
+
+
+
+		    UPDATE  t_logicgroup
+			SET    
+					 logicGroupName=#{logicGroupName},
+		             siteId=#{siteId},
+		             orgCode=#{orgCode},
+		             orgAddress=#{orgAddress},
+		             orgZipcode=#{orgZipcode},
+		             orgWebsite=#{orgWebsite},
+		             orgTel=#{orgTel},
+		             orgFax=#{orgFax},
+		             activeState=#{orgFax},
+		             logicGroupType=#{logicGroupType}
+			WHERE 	 
+					siteId = #{siteId}
+
+
+
+        ]]>
+	</update>
+    <update id="updateLogicGroupDataVersion" parameterType="logicGroup">
+        <![CDATA[
+
+
+
+		    UPDATE  t_logicgroup
+			SET    
+				    dataVersion = #{dataVersion}
+			WHERE 
+					siteId = #{siteId}			        
+
+
+
+        ]]>
+	</update>
+
+    <!-- 以下为判断各表中的一条data是否已经存在的sqlmap -->
+    <select id="isExistNodeinfo" parameterType="ttNodeinfo" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		    SELECT
+				  COUNT(0)
+			FROM 
+				m_nodeinfo AS t
+			WHERE 
+				t.nodeid = #{nodeid}
+
+
+
+        ]]>
+	</select>
+
+
+    <select id="isExistDeviceLink" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		    SELECT
+				COUNT(0)
+			FROM
+				${nodeId} AS t
+			WHERE
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistNodesensor" parameterType="ttNodeSensor" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+				  COUNT(0)
+			 FROM 
+				m_nodesensor AS t
+			 WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistLogicGroup" parameterType="logicGroup" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0) 
+			 FROM 
+				t_logicgroup AS t
+			 WHERE 
+				t.siteId = #{siteId}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistNodeinfomemory" parameterType="ttNodeinfomemory" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_nodeinfomemory AS t
+			 WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistHistorydatacount" parameterType="ttHistorydatacount" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_historydatacount AS t
+			 WHERE 
+				t.nodeid = #{nodeid}
+			 AND
+				t.date = #{date}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistNodedata" parameterType="ttNode" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		    SELECT
+  				COUNT(0)
+			FROM 
+				`${nodeid}` AS t
+			WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+
+    <select id="isExistAvgdata" parameterType="ttAvgdata" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+ 				 COUNT(0)
+			 FROM 
+				m_avgdata AS t
+			 WHERE 
+				t.id = #{id}   
+
+
+
+        ]]>
+	</select>
+    <select id="isExistTbl_lxh_acc" parameterType="ttTbl_lxh_acc" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_tbl_lxh_acc AS t
+			 WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+    <select id="isExistTbl_rb_day_acc" parameterType="ttTbl_rb_day_acc" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_tbl_rb_day_acc AS t
+			 WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+    <select id="isExistTbl_rb_hour_acc" parameterType="ttTbl_rb_hour_acc" resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_tbl_rb_hour_acc AS t
+			 WHERE 
+				t.id = #{id}
+        ]]>
+	</select>
+    <select id="isExistWindrose" parameterType="ttWindrose" resultType="java.lang.Integer">
+        <![CDATA[
+
+
+
+		     SELECT
+  				COUNT(0)
+			 FROM 
+				m_windrose AS t
+			 WHERE 
+				t.id = #{id}
+
+
+
+        ]]>
+	</select>
+
+</mapper>

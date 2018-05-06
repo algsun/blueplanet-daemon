@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:12 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Location">
+
+    <select id="findById" parameterType="String" resultType="Location">
+        <![CDATA[
+        SELECT
+          id,
+          locationName,
+          nodeId,
+          zoneId,
+          siteId,
+          createTime,
+          TYPE,
+          remark
+        FROM
+          m_location
+        WHERE id = #{id}
+		]]>
+    </select>
+
+    <select id="findFollowers" parameterType="String" resultType="User">
+        <![CDATA[
+        SELECT
+          u.`id`,
+          u.`userPassword`,
+          u.`userName`,
+          u.`userEmail` AS email,
+          u.`mobile`,
+          u.`isDisable`,
+          u.`sex`,
+          u.`createTime`,
+          u.`token`,
+          u.`isActive`,
+          u.`photo`,
+          u.`departmentId`
+        FROM
+          m_location_follower lf,
+          t_users u
+        WHERE lf.userId = u.id
+          AND lf.locationId = #{locationId};
+		]]>
+    </select>
+
+    <select id="findLocations" parameterType="String" resultType="Location">
+        <![CDATA[
+        SELECT
+          id,
+          locationName,
+          nodeId,
+          zoneId,
+          siteId,
+          createTime,
+          TYPE,
+          remark
+        FROM
+          m_location
+        WHERE zoneId = #{zoneId}
+		]]>
+    </select>
+
+</mapper>

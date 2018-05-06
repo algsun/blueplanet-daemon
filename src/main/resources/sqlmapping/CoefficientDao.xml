@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Coefficient">
+
+    <!-- 获取所有默认系数，2013-2-26 -->
+    <select id="getDefaultCoefficient" resultType="Base_Coefficient">
+        <![CDATA[
+			SELECT
+			  sensorPhysicalid AS sensorId,
+			  paramName        AS paramName,
+			  defaultValue     AS paramValue
+			FROM m_defaultcoefficient AS t
+			ORDER BY t.sensorPhysicalid
+		 ]]>
+	</select>
+
+    <!-- 获取所有默认系数，2013-2-26 -->
+    <select id="getDefaultCoefficientSensorId" resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+			  sensorPhysicalid AS sensorId
+			FROM m_defaultcoefficient AS t
+			GROUP BY t.sensorPhysicalid
+		 ]]>
+	</select>
+
+    <select id="findDefaultCoefficientBySensorId" parameterType="java.lang.Integer" resultType="Base_Coefficient">
+        <![CDATA[
+			SELECT
+			  sensorPhysicalid AS sensorId,
+			  paramName        AS paramName,
+			  defaultValue     AS paramValue
+			FROM
+			  m_defaultcoefficient
+			WHERE
+			  sensorPhysicalid = #{id}
+			ORDER BY
+			  paramName
+        ]]>
+    </select>
+
+    <!-- 获取节点下所有的公式系统 -->
+    <select id="getNodeAllCoefficient" parameterType="java.lang.String" resultType="java.util.Map">
+        <![CDATA[
+        SELECT
+            *
+        FROM
+            m_coefficient
+        WHERE
+            nodeid=#{value}
+        ]]>
+    </select>
+</mapper>

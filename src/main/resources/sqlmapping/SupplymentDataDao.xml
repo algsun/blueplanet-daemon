@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- 原始数据包缓存 回滚至1147 --><!--Converted at: Fri Jul 19 15:52:15 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="SupplymentData">
+
+	<!-- 获取DataCache空数据信息 -->
+	<select id="getDataCacheEmptyInfo" parameterType="java.lang.Integer" resultType="EmptyDataBean">
+        <![CDATA[
+	    	 SELECT * FROM
+	         	m_emptyrecord
+	    	 WHERE 
+	         	dataCacheSuccess < #{value}
+	    	 ORDER BY 
+	   	 	 	stamp DESC
+		 ]]>
+	</select>
+	
+    <!-- 获取Gateway空数据信息 -->
+	<select id="getGatewayEmptyInfo" parameterType="java.lang.Integer" resultType="EmptyDataBean">
+        <![CDATA[
+	    	 SELECT * FROM
+	         	m_emptyrecord
+	    	 WHERE 
+	         	gatewaySuccess < #{value}
+	    	 ORDER BY 
+	   	 	 	stamp DESC
+		 ]]>
+	</select>
+
+	<!-- 插入空数据 -->
+	<insert id="insertEmptyInfo" parameterType="EmptyDataBean">
+        <![CDATA[
+		    INSERT INTO
+		    	m_emptyrecord
+		    	(nodeId,stamp,gatewaySuccess,dataCacheSuccess)
+		    VALUES 
+		    	(#{nodeid},#{stamp},#{gatewaySuccess},#{dataCacheSuccess})
+		 ]]>
+	</insert>
+
+
+	<!-- 判断空数据是否已经存在 -->
+	<parameterMap id="isExistEmptyDataMap" type="java.util.HashMap">
+		<parameter property="nodeid"/>
+		<parameter property="stamp"/>
+	</parameterMap>
+	<select id="isExistEmptyData" parameterMap="isExistEmptyDataMap" resultType="java.lang.Integer">
+        <![CDATA[
+		    SELECT
+		    	COUNT(1)
+		    FROM 
+		     	m_emptyrecord
+		    WHERE 
+		    	nodeid = ?
+		    AND 
+		    	stamp like ?
+		 ]]>
+	</select>
+
+
+	<!-- 修改网关空数据记录 -->
+	<update id="updateGatewaySign" parameterType="EmptyDataBean">
+        <![CDATA[
+		    UPDATE
+		    	m_emptyrecord
+		    SET 
+		    	gatewaySuccess = #{gatewaySuccess}
+		    WHERE 
+		    	nodeid = #{nodeid}
+		    AND 
+		    	stamp = #{stamp}
+		 ]]>
+	</update>
+
+	<!-- 修改缓存中心空数据记录 -->
+	<update id="updateCacheSign" parameterType="EmptyDataBean">
+        <![CDATA[
+		    UPDATE
+		    	m_emptyrecord
+		    SET 
+		    	dataCacheSuccess = #{dataCacheSuccess}
+		    WHERE 
+		    	nodeid = #{nodeid}
+		    AND 
+		    	stamp = #{stamp}
+		 ]]>
+	</update>
+
+	<!-- 获取空数据信息 -->
+	<select id="getEmptyInfoByNodeid" parameterType="EmptyDataBean" resultType="EmptyDataBean">
+        <![CDATA[
+	    	SELECT * FROM
+	         	m_emptyrecord
+		    WHERE 
+		    	nodeid = #{nodeid}
+		    AND 
+		    	stamp = #{stamp}
+		 ]]>
+	</select>
+</mapper>

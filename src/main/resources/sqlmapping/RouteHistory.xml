@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="RouteHistory">
+    <select id="insertRouteHistory" parameterType="java.util.Map">
+        <![CDATA[
+        INSERT INTO
+        h_route_history
+        (`carId`,`longitude`,`latitude`,`time`)
+        VALUES (#{carId},#{longitude},#{latitude},#{time})
+        ]]>
+    </select>
+</mapper>

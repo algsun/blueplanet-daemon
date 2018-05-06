@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Switch">
+
+    <insert id="saveSwitches" parameterType="DeviceBean">
+    <![CDATA[
+        INSERT INTO `m_control_module_status`
+                    (`id`,
+                     `node_id`,
+                     `enable`,
+                     `switch`,
+                     `create_time`)
+        VALUES (#{id},
+                #{node_id},
+                #{enable},
+                #{switch},
+                #{create_time})
+    ]]>
+    </insert>
+
+    <insert id="saveSwitchChange" parameterType="java.util.Map">
+        <![CDATA[
+        INSERT INTO `m_control_module_switch_change`
+                    (`id`,
+                     `node_id`,
+                     `enable_before`,
+                     `switch_before`,
+                     `create_time_before`,
+                     `enable_after`,
+                     `switch_after`,
+                     `create_time_after`,
+                     `route`,
+                     `action`,
+                     `actionDriver`)
+        VALUES (#{id},
+                #{deviceId},
+                #{before.enable},
+                #{before.onOff},
+                #{before.timestamp},
+                #{after.enable},
+                #{after.onOff},
+                #{after.timestamp},
+                #{route},
+                #{action},
+                #{actionDriver});
+        ]]>
+    </insert>
+
+    <!-- 返回最后一次控制模块的开关状态 -->
+    <select id="findLastSwitchByDeviceId" parameterType="string" resultType="Switches">
+        <include refid="querySwitches"/>
+        <![CDATA[
+        WHERE c.node_id = #{deviceId}
+        ORDER BY c.create_time DESC
+        LIMIT 1
+        ]]>
+    </select>
+
+    <select id="findDailyActions" resultType="SwitchDailyAction">
+      <![CDATA[
+        SELECT
+             id,
+             deviceId,
+             route,
+             `time`,
+             `action`
+         FROM
+             m_control_module_action_daily
+        ]]>
+    </select>
+
+    <select id="findDailyActionById" parameterType="string" resultType="SwitchDailyAction">
+        <![CDATA[
+        SELECT
+             id,
+             deviceId,
+             route,
+             `time`,
+             `action`
+         FROM
+             m_control_module_action_daily
+         WHERE id = #{id}
+        ]]>
+    </select>
+
+    <select id="findDailyActionsByDeviceId" parameterType="string" resultType="SwitchDailyAction">
+      <![CDATA[
+        SELECT
+             id,
+             deviceId,
+             route,
+             `time`,
+             `action`
+         FROM
+             m_control_module_action_daily
+         WHERE deviceId = #{deviceId}
+        ]]>
+    </select>
+
+    <select id="findIntervalActions" resultType="SwitchIntervalAction">
+      <![CDATA[
+        SELECT id,
+             deviceId,
+             route,
+             intervalTime,
+             executionTime,
+             `action`
+         FROM
+            m_control_module_action_interval
+        ]]>
+    </select>
+
+    <select id="findIntervalActionById" parameterType="string" resultType="SwitchIntervalAction">
+        <![CDATA[
+        SELECT id,
+             deviceId,
+             route,
+             intervalTime,
+             executionTime,
+             `action`
+         FROM
+            m_control_module_action_interval
+         WHERE id = #{id}
+        ]]>
+    </select>
+
+    <select id="findIntervalActionsByDeviceId" parameterType="string" resultType="SwitchIntervalAction">
+      <![CDATA[
+        SELECT id,
+             deviceId,
+             route,
+             intervalTime,
+             executionTime,
+             `action`
+         FROM
+            m_control_module_action_interval
+         WHERE deviceId = #{deviceId}
+        ]]>
+    </select>
+
+    <!-- 判断此设备是否被用作监测指标动作 -->
+    <select id="isDeviceUsedForSensorAction" parameterType="string" resultType="int">
+        <![CDATA[
+        SELECT count(1) FROM m_control_module_sensor_condition WHERE deviceId = #{deviceId};
+        ]]>
+    </select>
+
+    <select id="findSensorActionByDeviceId" parameterType="string" resultType="SwitchSensorAction">
+        <![CDATA[
+        SELECT
+            sa.id,
+            sa.controlModuleId,
+            sa.route,
+            sa.logic,
+            sa.action,
+            sa.updateTime
+        FROM
+            m_control_module_sensor_action AS sa
+        WHERE
+            sa.id IN (SELECT DISTINCT
+                    sensorActionId
+                FROM
+                    m_control_module_sensor_condition
+                WHERE
+                    deviceId = #{deviceId});
+        ]]>
+    </select>
+
+
+    <select id="findSensorConditionByDeviceId" parameterType="string" resultType="SensorCondition">
+        <![CDATA[
+        SELECT
+          sc.`id`,
+          sc.`sensorActionId`,
+          sc.`deviceId`,
+          sc.`sensorId`,
+          ms.`cn_name` sensorCNName,
+          ms.`en_name` sensorENName,
+          ms.`units` sensorUnits,
+          sc.`operator`,
+          sc.`value`,
+          sc.`updateTime`
+        FROM
+          m_control_module_sensor_condition sc,
+          m_sensorinfo ms
+        WHERE sc.sensorId = ms.sensorPhysicalid
+          AND sc.sensorActionId = #{sensorActionId}
+        ]]>
+    </select>
+
+
+    <sql id="querySwitches">
+        <![CDATA[
+        SELECT
+          c.`id` AS id,
+          c.`node_id` AS deviceId,
+          c.`enable`,
+          c.`switch` AS onOff,
+          c.`create_time` AS `timestamp`
+        FROM
+          `m_control_module_status` AS c
+        ]]>
+    </sql>
+</mapper>

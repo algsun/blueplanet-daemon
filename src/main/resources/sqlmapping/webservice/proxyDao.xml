@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Tue Jul 30 14:43:38 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="proxy">
+<!-- @check 2013-1-10 zhangpeng svn：1107 -->
+
+	<!-- 根据站点编号获得站点下所有设备的设备信息实时数据 -->
+	<select id="getNodeInforListBySiteId" parameterType="java.lang.String" resultType="RealtimeData_NodeInfor">
+        <![CDATA[
+			SELECT DISTINCT
+  				m.nodeid          AS nodeId ,
+  				m.lowvoltage      As voltageState,
+  				m.anomaly         AS deviceState,
+  				m.deviceMode      AS workingModel
+			FROM 
+				m_nodeinfomemory  AS m  
+			LEFT JOIN 
+			    m_nodeinfo        AS n
+			ON  
+			    m.nodeid = n.nodeid
+			WHERE 
+				n.siteid=#{siteid} 
+		    AND n.isActive =1
+		    AND n.nodeType IN (1,4)
+			ORDER BY 
+				m.nodeid
+		 ]]>
+	</select>
+
+	<!-- 根据nodeId 查询 设备 监测指标的实时数据 -->
+	<select id="getNodesensorListByNodeId" parameterType="java.lang.String" resultType="RealtimeData_Nodesensor">
+        <![CDATA[
+			SELECT DISTINCT
+  				m.sensorPhysicalid    AS sensorId,
+  				m.sensorPhysicalValue AS sensorValue,
+  				m.state               AS valueState,
+  				n.showType            AS showType
+			FROM 
+				m_nodesensor      AS m  
+			LEFT JOIN
+			    m_sensorinfo         AS n
+			ON  m.sensorPhysicalid=n.sensorPhysicalid
+			WHERE 
+				m.nodeid = #{nodeid}
+			AND 
+			    n.isActive=1
+			ORDER BY 
+				n.positions
+		 ]]>
+	</select>
+
+	<!-- 根据nodeId 查询实时数据显示的采样时间（实时数据显示时采用一组数据中时间最大值） -->
+	<select id="getRealtimeDataStampByNodeId" parameterType="java.lang.String" resultType="java.util.Date">
+        <![CDATA[
+			SELECT DISTINCT
+  				MAX(m.stamp)
+			FROM 
+				m_nodesensor      AS m  
+			WHERE 
+				m.nodeid = #{nodeid}
+		 ]]>
+	</select>
+	
+	<!-- 查询24小时数据 -->
+	<select id="getChartData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        <![CDATA[
+		   	SELECT
+         		t1.sensorValue   AS sensorValue,   
+          		t1.createtime            AS createtime	
+			FROM
+				(	SELECT @rownum:=@rownum+1 AS rno,t.*
+			 		FROM 
+			         (SELECT @rownum:=0) r,
+			         (SELECT DISTINCT
+			            a.sensorPhysicalValue   AS sensorValue,   
+				        a.createtime            AS createtime			
+			          FROM 
+				        `${nodeId}` AS a 
+			          WHERE
+				        a.sensorPhysicalid = #{sensorPhysicalid}
+		              AND
+		                a.createtime &gt;= #{queryTime}
+			          AND 
+				        a.state &lt;&gt; 4
+			          ORDER BY 
+				        a.createtime  ASC
+                    ) t ) t1
+            WHERE MOD(rno,#a#) = #b#
+		 ]]>
+	</select>
+	
+	<!-- 查询24小时数据统计数据 -->
+	<select id="getChartStatData" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        <![CDATA[
+				SELECT
+				      min(t1.sensorValue)	AS 'min',
+				      max(t1.sensorValue)       AS 'max',
+				      round(avg(t1.sensorValue),2)       AS 'avg'
+				FROM
+				( SELECT @rownum:=@rownum+1 AS rno,t.*
+				  FROM 
+				 (SELECT @rownum:=0) r,
+				 (SELECT DISTINCT
+							    a.sensorPhysicalValue+0   AS sensorValue,   
+								a.createtime+0            AS createtime			
+							FROM 
+								`${nodeId}` AS a 
+							WHERE
+								a.sensorPhysicalid = #{sensorPhysicalid}
+						        AND
+						        a.createtime &gt;= #{queryTime}
+							AND 
+								a.state &lt;&gt; 4
+							ORDER BY 
+								a.createtime  ASC
+				) t ) t1
+				WHERE MOD(rno,#a#) = #b#
+		 ]]>
+	</select>
+
+	<!-- 查询24小时数据数量 -->
+	<select id="getChartDataCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        <![CDATA[
+		    SELECT count(b.id)
+		    FROM (
+                   SELECT DISTINCT 
+                     * 
+				   FROM 
+				   `${nodeId}` AS a 
+			       WHERE
+				    a.sensorPhysicalid = #{sensorPhysicalid}
+		           AND
+		            a.createtime &gt;= #{queryTime}
+			       AND 
+				    a.state &lt;&gt; 4
+		    ) as b;
+		 ]]>
+	</select>
+
+
+	<!-- 查询一个站点下所有设备已经激活的监测指标 -->
+	<select id="getSensorInforList" parameterType="java.lang.String" resultType="Sensorinfor">
+        <![CDATA[
+	      SELECT DISTINCT
+               m.sensorPhysicalid    AS sensorId,
+			   m.cn_name             AS cnName,
+			   m.units               AS units
+           FROM 
+               m_sensorinfo         AS m
+           LEFT JOIN 
+               m_nodesensor    AS n
+           ON  
+               m.sensorPhysicalid = n.sensorPhysicalid
+           LEFT JOIN 
+               m_nodeinfo      AS e
+           ON 
+               n.nodeid=e.nodeid
+           WHERE 
+               e.siteId=#{siteId}
+           AND 
+               m.isActive=1
+           ORDER BY 
+               m.positions
+		 ]]>
+	</select>
+
+
+	<!-- 获得当前站点 -->
+	<select id="proxy.getCurrentSite" resultType="Site">
+        <![CDATA[
+			SELECT DISTINCT
+			    t.siteId ,  
+			    t.siteName		
+			FROM 
+				t_siteinfo     AS t
+			WHERE
+			    t.isCurrentSite = 1
+		 ]]>
+	</select>
+	
+	<!-- 获得当前站点下所有网关 -->
+	<select id="proxy.getAllGateway" resultType="proxy-DeviceBean">
+        <![CDATA[
+			SELECT DISTINCT
+			    a.nodeid  AS deviceId
+			FROM
+			   m_nodeinfo   AS a 
+			LEFT  JOIN 
+			   t_siteinfo   AS b  
+			ON 
+			   a.siteId =b.siteId
+			WHERE 
+			   b.isCurrentSite=1
+			AND 
+			   a.nodeType=7
+		 ]]>
+	</select>
+</mapper>

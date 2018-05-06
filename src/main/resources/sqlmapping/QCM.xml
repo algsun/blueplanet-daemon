@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:12 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="QCM">
+    <insert id="insertReplaceSensor" parameterType="java.util.HashMap">
+        <![CDATA[
+
+            INSERT INTO `m_replace_sensor` (`locationId`,`replaceDate`)
+            VALUES (#{locationId}, #{replaceDate});
+
+		 ]]>
+    </insert>
+
+    <select id="findReplaceSensorCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        <![CDATA[
+          SELECT
+            COUNT(id)
+          FROM m_replace_sensor
+          WHERE locationId = #{locationId} AND replaceDate = #{replaceDate}
+        ]]>
+    </select>
+</mapper>

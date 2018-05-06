@@ -1,0 +1,4 @@
+
+# 忽略设备超时检查的站点
+# siteWithoutTimeoutCheck: ['61011301', '61011501']
+sitesWithoutTimeoutCheck: []

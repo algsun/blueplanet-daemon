@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Tue Jul 30 14:43:35 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="netLink">
+    <!-- TODO 与 NetManage 冗余 @gaohui 2013-08-13 -->
+
+	<!-- 添加通讯端口 -->
+	<insert id="addCommunicationInterface" parameterType="NetInfo">
+        <![CDATA[
+		     insert into m_netinfo(lport,model,state) values(#{lport},#{model},#{state})
+		 ]]>
+	</insert>
+
+	<!-- 是否有相同的通讯端口 -->
+	<select id="hasSamePort" parameterType="NetInfo" resultType="java.lang.Integer">
+        <![CDATA[
+		     select count(1) from m_netinfo where lport = #{lport} and model = #{model}
+		 ]]>
+	</select>
+
+	<!-- 删除通讯端口 -->
+	<delete id="deleteCommunicationInterface" parameterType="NetInfo">
+        <![CDATA[
+			delete from m_netinfo where lport = #{lport} and model = #{model}
+		 ]]>
+	</delete>
+
+	<!-- 获取所有通讯接口 -->
+	<select id="getCommunications" resultType="NetInfo">
+        <![CDATA[
+		     select id,radds,rport,lport,sport,brate,model,state from m_netinfo
+		 ]]>
+	</select>
+
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:10 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="NetManager">
+
+	<!-- 添加UDP监听 -->
+	<parameterMap id="addNetInfo-param" type="java.util.HashMap">
+		<parameter property="lport"/>
+		<parameter property="model"/>
+        <parameter property="siteId"/>
+	</parameterMap>
+	<insert id="addNetInfo" parameterMap="addNetInfo-param">
+        <![CDATA[
+		     insert into m_netinfo(lport, model, siteId) values(?, ?, ?)
+		 ]]>
+	</insert>
+
+	<!-- 检查系统是否已经配置了相同的本地监听端口 -->
+	<select id="hasSameLocalPort" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        <![CDATA[
+		     select
+				count(1) 
+			 from 
+				m_netinfo 
+			 where 
+				lport = #{value}
+		 ]]>
+	</select>
+
+    <!-- 删除一条接口记录 -->
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        <![CDATA[
+			DELETE FROM m_netinfo WHERE id = #{value}
+		 ]]>
+	</delete>
+
+
+	<!-- 删除一条接口记录 -->
+	<delete id="deleteRecord" parameterType="NetInfo">
+        <![CDATA[
+			delete from
+				m_netinfo 
+			where 
+				lport = #{lport} AND 
+				model = #{model}
+		 ]]>
+	</delete>
+
+	<!-- 更新通讯状态 -->
+	<parameterMap id="updateCommState-param" type="java.util.HashMap">
+		<parameter property="state"/>
+		<parameter property="id"/>
+	</parameterMap>
+	<update id="updateCommState" parameterMap="updateCommState-param">
+        <![CDATA[
+			UPDATE
+				m_netinfo 
+			SET 
+				state = ? 
+			where 
+				id = ?
+		 ]]>
+	</update>
+
+	<!-- 获取所有通讯接口 -->
+	<select id="getCommunications" resultType="NetInfo">
+        <include refid="query"/>
+        <![CDATA[
+             ORDER BY lport
+		 ]]>
+	</select>
+
+    <!-- 根据类型获取所有通讯接口 -->
+    <select id="findByType" parameterType="int" resultType="NetInfo">
+        <include refid="query"/>
+        <![CDATA[
+		     WHERE model = #{type}
+		 ]]>
+    </select>
+
+
+	<!-- 通过id获取通讯接口 -->
+	<select id="getCommunicationByID" parameterType="java.lang.String" resultType="NetInfo">
+        <include refid="query"/>
+        <![CDATA[
+			 WHERE
+				id = #{value}
+		 ]]>
+	</select>
+
+	<!-- 获取通讯状态 -->
+	<select id="getConnState" parameterType="java.lang.String" resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT
+				state 
+			 FROM 
+				m_netinfo 
+			 WHERE 
+				id = #{value}
+		 ]]>
+	</select>
+
+    <sql id="query">
+        <![CDATA[
+		     select
+		        id,
+				radds,
+				rport,
+				lport,
+				sport,
+				brate,
+				model,
+				state,
+				siteId
+			 from
+				m_netinfo
+        ]]>
+    </sql>
+
+</mapper>

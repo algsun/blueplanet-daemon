@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:16 CST 2013-->
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD SQL Map Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <settings>
+        <setting name="cacheEnabled" value="true"/>
+        <setting name="lazyLoadingEnabled" value="true"/>
+    </settings>
+
+    <typeAliases>
+        <!--============================= hardware ==============================================-->
+
+        <typeAlias alias="DeviceBean" type="com.microwise.msp.hardware.businessbean.DeviceBean"/>
+
+        <typeAlias alias="DataPacketBean" type="com.microwise.msp.hardware.businessbean.DataPacketBean"/>
+
+        <typeAlias alias="ttDataPacket" type="com.microwise.msp.hardware.businessbean.DataPacket"/>
+
+        <typeAlias alias="NodeVo" type="com.microwise.msp.hardware.vo.NodeVo"/>
+
+        <typeAlias alias="LocationVo" type="com.microwise.msp.hardware.vo.LocationVo"/>
+
+        <typeAlias alias="NodeSensor" type="com.microwise.msp.hardware.vo.NodeSensor"/>
+
+        <typeAlias alias="LocationSensor" type="com.microwise.msp.hardware.vo.LocationSensor"/>
+
+        <typeAlias alias="NetInfo" type="com.microwise.msp.hardware.vo.NetInfo"/>
+
+        <typeAlias alias="DataSupplement" type="com.microwise.msp.hardware.vo.DataSupplement"/>
+
+        <typeAlias alias="Sensor" type="com.microwise.msp.hardware.businessbean.Sensor"/>
+
+        <typeAlias alias="SensorPhysicalBean" type="com.microwise.msp.hardware.businessbean.SensorPhysicalBean"/>
+
+        <typeAlias alias="h-Site" type="com.microwise.msp.hardware.businessbean.Site"/>
+
+        <typeAlias alias="EmptyDataBean" type="com.microwise.msp.hardware.businessbean.EmptyDataBean"/>
+
+        <typeAlias alias="AvgPeak" type="com.microwise.msp.hardware.businessbean.AvgPeak"/>
+
+        <typeAlias alias="WindRose" type="com.microwise.msp.hardware.businessbean.WindRose"/>
+
+        <typeAlias alias="Lux" type="com.microwise.msp.hardware.businessbean.Lux"/>
+
+        <typeAlias alias="Zone" type="com.microwise.msp.hardware.businessbean.Zone"/>
+        <typeAlias alias="Location" type="com.microwise.msp.hardware.businessbean.rabbitmq.Location"/>
+
+        <typeAlias alias="FloatSensor" type="com.microwise.msp.hardware.businessbean.FloatSensor"/>
+        <!-- m_threshold缓存 -->
+        <typeAlias alias="ThresholdCacheBean" type="com.microwise.msp.hardware.businessbean.ThresholdCacheBean"/>
+
+        <typeAlias alias="ThresholdZoneBean" type="com.microwise.msp.hardware.businessbean.ThresholdZoneBean"/>
+
+        <typeAlias alias="Threshold" type="com.microwise.msp.hardware.businessbean.Threshold"/>
+        <typeAlias alias="ThresholdAlarmHistory" type="com.microwise.msp.hardware.businessbean.ThresholdAlarmHistory"/>
+        <typeAlias alias="Measure" type="com.microwise.msp.hardware.businessbean.Measure"/>
+        <typeAlias alias="User" type="com.microwise.msp.hardware.businessbean.User"/>
+        <typeAlias alias="Task" type="com.microwise.msp.hardware.businessbean.Task"/>
+
+        <typeAlias alias="Formula" type="com.microwise.msp.hardware.businessbean.Formula"/>
+
+        <typeAlias alias="ConditionRefl" type="com.microwise.msp.hardware.businessbean.ConditionRefl"/>
+
+        <typeAlias alias="Switches" type="com.microwise.msp.hardware.businessbean.Switches"/>
+        <typeAlias alias="SwitchDailyAction" type="com.microwise.msp.hardware.businessbean.SwitchDailyAction"/>
+        <typeAlias alias="SwitchIntervalAction" type="com.microwise.msp.hardware.businessbean.SwitchIntervalAction"/>
+        <typeAlias alias="SwitchSensorAction" type="com.microwise.msp.hardware.businessbean.SwitchSensorAction"/>
+        <typeAlias alias="SensorCondition" type="com.microwise.msp.hardware.businessbean.SensorCondition"/>
+        <typeAlias alias="ControlModuleNotification"
+                   type="com.microwise.msp.hardware.businessbean.ControlModuleNotification"/>
+
+        <typeAlias alias="Stock" type="com.microwise.msp.hardware.businessbean.Stock"/>
+        <typeAlias alias="Office" type="com.microwise.msp.hardware.businessbean.Office"/>
+
+
+        <!--============================= platform =============================================-->
+
+        <!-- 数据库对象 -->
+        <typeAlias alias="ttDataBaseObject" type="com.microwise.msp.platform.bean.DataBaseObject"/>
+        <!-- 当前站点信息 -->
+        <typeAlias alias="ttsiteinfo" type="com.microwise.msp.platform.bean.Siteinfo"/>
+        <!-- 数据同步日志表 -->
+        <typeAlias alias="ttLogTransfer" type="com.microwise.msp.platform.bean.LogTransfer"/>
+
+        <!-- 站点组表 -->
+        <typeAlias alias="logicGroup" type="com.microwise.msp.platform.bean.LogicGroup"/>
+
+        <!-- 节点信息表 -->
+        <typeAlias alias="ttNodeinfo" type="com.microwise.msp.platform.bean.NodeInfo"/>
+        <!-- 节点数据 对应N个节点表 -->
+        <typeAlias alias="ttNode" type="com.microwise.msp.platform.bean.NodeCls"/>
+        <!-- 节点传感表 -->
+        <typeAlias alias="ttNodesensor" type="com.microwise.msp.platform.bean.Nodesensor"/>
+        <!-- 节点信息内存表 - nodeinfomemory -->
+        <typeAlias alias="ttNodeinfomemory" type="com.microwise.msp.platform.bean.Nodeinfomemory"/>
+        <!-- 历史数据索引表 - nodeinfomemory -->
+        <typeAlias alias="ttHistorydatacount" type="com.microwise.msp.platform.bean.Historydatacount"/>
+
+        <!-- 日照量表 - tbl_lxh_acc -->
+        <typeAlias alias="ttTbl_lxh_acc" type="com.microwise.msp.platform.bean.Tbl_lxh_acc"/>
+        <!-- 日降雨量表 - tbl_rd_day_acc -->
+        <typeAlias alias="ttTbl_rb_day_acc" type="com.microwise.msp.platform.bean.Tbl_rb_day_acc"/>
+        <!-- 小时降雨量表 - tbl_rd_hour_acc -->
+        <typeAlias alias="ttTbl_rb_hour_acc" type="com.microwise.msp.platform.bean.Tbl_rb_hour_acc"/>
+        <!-- 风向玫瑰图 日统计值表表 - windrose -->
+        <typeAlias alias="ttWindrose" type="com.microwise.msp.platform.bean.Windrose"/>
+        <!-- 均峰值数据表 Avgdata -->
+        <typeAlias alias="ttAvgdata" type="com.microwise.msp.platform.bean.Avgdata"/>
+
+        <!-- 区域_接入点 对应表 - Mapping_area_site -->
+        <typeAlias alias="ttMapping_area_site" type="com.microwise.msp.platform.bean.Mapping_area_site"/>
+        <!-- 接入点_节点 对应表 - Mapping_site_node -->
+        <typeAlias alias="ttMapping_site_node" type="com.microwise.msp.platform.bean.Mapping_site_node"/>
+
+        <!-- TmonitoringStation_info 监测点 -->
+        <typeAlias alias="ttmonitoringStation_info" type="com.microwise.msp.platform.bean.TmonitoringStation_info"/>
+        <!-- Tnode_monitoringStation_info 设备_监测点对应关系 -->
+        <typeAlias alias="ttnode_monitoringStation_info"
+                   type="com.microwise.msp.platform.bean.Tnode_monitoringStation_info"/>
+
+        <!-- 实时数据和实时数据信息表 -->
+        <typeAlias alias="nodeinfoAndNodeInfoMemory" type="com.microwise.msp.platform.bean.NodeInfoAndNodeInfoMemory"/>
+
+        <typeAlias alias="Dco_Order" type="com.microwise.msp.hardware.vo.Order"/>
+
+        <typeAlias alias="DeviceLink" type="com.microwise.msp.platform.bean.DeviceLink"/>
+
+        <typeAlias alias="NodeData" type="com.microwise.msp.hardware.businessbean.NodeData"/>
+        <!-- webservice -->
+
+        <typeAlias alias="EquipmentParameterBean" type="com.microwise.msp.hardware.vo.EquipmentParameterBean"/>
+        <typeAlias alias="General" type="com.microwise.msp.hardware.vo.General"/>
+        <typeAlias alias="NetInfo" type="com.microwise.msp.hardware.vo.NetInfo"/>
+
+
+        <!--============================= proxy ==============================================-->
+
+        <!-- 设备实时数据bean -->
+        <typeAlias alias="RealtimeData_NodeInfor" type="com.microwise.msp.proxy.bean.NodeInforBean"/>
+        <!-- 检测指标实时数据 -->
+        <typeAlias alias="RealtimeData_Nodesensor" type="com.microwise.msp.proxy.bean.NodeSensorBean"/>
+        <!-- 监测指标信息 -->
+        <typeAlias alias="Sensorinfor" type="com.microwise.msp.proxy.bean.SensorInfoBean"/>
+
+        <!-- 站点信息 -->
+        <typeAlias alias="Site" type="com.microwise.msp.proxy.bean.SiteBean"/>
+
+        <!-- 站点信息 -->
+        <!-- TODO DeviceBean 重复 @gaohui 2013-11-08  -->
+        <typeAlias alias="proxy-DeviceBean" type="com.microwise.msp.proxy.bean.DeviceBean"/>
+
+        <!-- 数据文件-->
+        <typeAlias alias="DataFile" type="com.microwise.msp.hardware.businessbean.DataFile"/>
+    </typeAliases>
+
+    <mappers>
+        <mapper resource="sqlmapping/BaseDao.xml"/>
+        <mapper resource="sqlmapping/DataProcessDao.xml"/>
+        <mapper resource="sqlmapping/AnalysisDao.xml"/>
+        <mapper resource="sqlmapping/DeviceDao.xml"/>
+        <mapper resource="sqlmapping/DeviceSensorDao.xml"/>
+        <mapper resource="sqlmapping/NetManagerDao.xml"/>
+        <mapper resource="sqlmapping/DcoDao.xml"/>
+        <mapper resource="sqlmapping/SensorDao.xml"/>
+        <mapper resource="sqlmapping/SiteDao.xml"/>
+        <mapper resource="sqlmapping/DataTransferDao.xml"/>
+        <mapper resource="sqlmapping/DataPacketDao.xml"/>
+        <mapper resource="sqlmapping/SupplymentDataDao.xml"/>
+        <mapper resource="sqlmapping/ThresholdDao.xml"/>
+        <mapper resource="sqlmapping/TaskDao.xml"/>
+        <mapper resource="sqlmapping/ZoneDao.xml"/>
+        <mapper resource="sqlmapping/FormulaDao.xml"/>
+        <mapper resource="sqlmapping/SwitchDao.xml"/>
+        <mapper resource="sqlmapping/ControlModuleNotificationDao.xml"/>
+        <mapper resource="sqlmapping/UserDao.xml"/>
+        <mapper resource="sqlmapping/LocationDao.xml"/>
+        <mapper resource="sqlmapping/LocationSensorDao.xml"/>
+        <mapper resource="sqlmapping/QCM.xml"/>
+        <mapper resource="sqlmapping/SyncDataDao.xml"/>
+        <mapper resource="sqlmapping/FloatSensor.xml"/>
+        <mapper resource="sqlmapping/SourceDao.xml"/>
+        <mapper resource="sqlmapping/OfficeDao.xml"/>
+        <mapper resource="sqlmapping/CarDao.xml"/>
+        <mapper resource="sqlmapping/RouteHistory.xml"/>
+
+        <mapper resource="sqlmapping/webservice/NetLinkDao.xml"/>
+        <mapper resource="sqlmapping/webservice/GeneralDao.xml"/>
+        <mapper resource="sqlmapping/webservice/CoefficientDao.xml"/>
+        <mapper resource="sqlmapping/webservice/proxyDao.xml"/>
+    </mappers>
+</configuration>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE struts PUBLIC "-//Apache Software Foundation//DTD Struts Configuration 2.1//EN"
+        "http://struts.apache.org/dtds/struts-2.1.dtd">
+
+
+<struts>
+    <constant name="struts.i18n.encoding" value="utf-8"/>
+    <constant name="struts.convention.classes.reload" value="true"/>
+    <!--<constant name="struts.action.extension" value="action" />-->
+    <constant name="struts.multipart.parser" value="cos"/>
+
+    <constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+
+    <constant name="struts.freeroute.controllerSuffixes" value="Action, Controller"/>
+    <constant name="struts.freeroute.controllerPackage" value="com.microwise"/>
+    <constant name="struts.freeroute.defaultParentPackage" value="json-default"/>
+
+    <package name="logs" extends="json-default" namespace="/struts/logs">
+        <!-- 日志下载 -->
+        <action name="raw" class="logsController" method="download">
+            <result type="stream">
+                <param name="contentType">application/octet-stream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}"</param>
+                <param name="inputName">inputStream</param>
+            </result>
+        </action>
+    </package>
+    <package name="logAnalysis" extends="json-default" namespace="/struts">
+        <action name="doLogAnalysis" class="com.microwise.msp.hardware.action.LogAnalysisController"
+                method="doLogAnalysis">
+            <result name="success" type="stream">
+                <param name="contentType">application/octet-stream</param>
+                <param name="contentDisposition">attachment;filename="${fileName}"</param>
+                <param name="inputName">downloadFile</param>
+            </result>
+        </action>
+    </package>
+</struts>

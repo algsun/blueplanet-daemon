@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:12 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Sensor">
+
+
+    <select id="findById" parameterType="int" resultType="Sensor">
+        <![CDATA[
+       SELECT
+          id,
+          sensorPhysicalid AS physicalId,
+          escape_sensor_id AS escapeSensorId,
+          en_name AS enName,
+          cn_name AS cnName,
+          sensorPrecision AS `precision`,
+          units AS unit,
+          positions AS `position`,
+          isActive AS active,
+          showType AS showType,
+          `minValue` AS `minValue`,
+          `maxValue` AS `maxValue`,
+          rangeType AS rangeType,
+          signType AS signType,
+          conditionType,
+          target,
+          floating
+        FROM m_sensorinfo
+        WHERE sensorPhysicalid = #{value}
+		 ]]>
+    </select>
+
+    <select id="findAll" resultType="Sensor">
+        <![CDATA[
+       SELECT
+          id,
+          sensorPhysicalid AS physicalId,
+          escape_sensor_id AS escapeSensorId,
+          en_name AS enName,
+          cn_name AS cnName,
+          sensorPrecision AS `precision`,
+          units AS unit,
+          positions AS `position`,
+          isActive AS active,
+          showType AS showType,
+          `minValue` AS `minValue`,
+          `maxValue` AS `maxValue`,
+          rangeType AS rangeType,
+          signType AS signType
+        FROM m_sensorinfo
+        ORDER BY sensorPhysicalid
+		 ]]>
+    </select>
+
+
+</mapper>

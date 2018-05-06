@@ -1,0 +1,1037 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:05 
+	CST 2013 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataProcess">
+
+    <!-- 获取指定传感设备列表 -->
+    <select id="getDeviceListBySensor" parameterType="java.lang.Integer" resultType="LocationVo">
+        <![CDATA[
+		SELECT DISTINCT
+          (l.locationId)
+        FROM
+          m_location_history l
+          LEFT JOIN m_nodesensor n
+            ON l.nodeId = n.nodeid
+		 ]]>
+        <where>
+            <if test="value != 0">
+                n.sensorPhysicalid = #{value}
+            </if>
+        </where>
+    </select>
+
+    <!-- 获取均峰值信息 -->
+    <select id="getAvgPeaks" parameterType="java.util.HashMap"
+            resultType="AvgPeak">
+        <![CDATA[
+			SELECT
+			  sensorPhysicalid,
+			  MAX(sensorPhysicalvalue + 0) `maxValue`,
+			  MIN(sensorPhysicalvalue + 0) `minValue`,
+			  AVG(sensorPhysicalvalue + 0) avgValue
+			FROM `${locationId}` l
+			WHERE createtime BETWEEN #{startTime} AND #{endTime}
+			 AND	l.state = 1
+			GROUP BY l.sensorPhysicalId
+        ]]>
+	</select>
+
+    <!-- 获取一段时间开始值、结束值、最高值、最低值 -->
+    <select id="findStocks" parameterType="java.util.HashMap"
+            resultType="Stock">
+        <![CDATA[
+			SELECT
+              b.sensorPhysicalId AS sensorId,
+              a.`sensorPhysicalvalue` AS endValue,
+              d.`sensorPhysicalvalue` AS beginValue,
+              b.`maxValue`,
+              b.`minValue`
+            FROM
+              `${locationId}` a,
+              `${locationId}` d,
+            (SELECT
+              nodeid,
+              sensorPhysicalId,
+             MAX(createtime) maxTime,
+             MAX(CAST(sensorPhysicalvalue AS DECIMAL))
+             AS `maxValue`,
+             MIN(createtime) minTime,
+             MIN(CAST(sensorPhysicalvalue AS DECIMAL))
+            AS `minValue`
+            FROM
+            `${locationId}`
+            WHERE createTime BETWEEN #{startDate} AND #{endDate}
+            AND state = 1
+            GROUP BY sensorPhysicalId) b INNER JOIN `m_sensorinfo` AS ms ON ms.`sensorPhysicalid` = b.sensorPhysicalId
+            WHERE a.`createtime` = b.maxTime
+            AND a.nodeid = b.nodeid
+            AND a.`sensorPhysicalid` = b.sensorPhysicalId
+            AND d.createTime = b.minTime
+            AND d.nodeid = b.nodeid
+            AND d.sensorPhysicalId = b.sensorPhysicalId
+            AND ms.`showType` = 0
+        ]]>
+	</select>
+
+    <!-- 查询KJ -->
+    <select id="findStockKD" parameterType="java.util.HashMap"
+            resultType="Stock">
+        <![CDATA[
+			SELECT
+              sensorId,
+              k,
+              d
+            FROM
+              m_stock
+            WHERE locationId = #{locationId}
+            AND sensorId = #{sensorId}
+            AND DATE(stamp) = #{date}
+        ]]>
+	</select>
+
+    <!-- 查询KJ -->
+    <select id="findStockEndValue" parameterType="java.util.HashMap"
+            resultType="Float">
+        <![CDATA[
+            SELECT ROUND(AVG(endValue),2) AS avgValue FROM
+              (SELECT endValue  FROM m_stock
+               WHERE locationId = #{locationId}
+               AND sensorId = #{sensorId}
+               AND stamp < DATE(#{stamp})
+               ORDER BY stamp DESC
+               LIMIT #{num})
+            AS temp
+        ]]>
+	</select>
+
+    <insert id="insertStock" parameterType="Stock">
+        <![CDATA[
+            INSERT INTO m_stock(id,locationId,sensorId,beginValue,endValue,`maxValue`,`minValue`,k,j,d,avgValue5,avgValue10,avgValue30,stamp)
+            VALUE (#{id},#{locationId},#{sensorId},#{beginValue},#{endValue},#{maxValue},#{minValue},#{k},#{j},#{d},#{avgValue5},#{avgValue10},#{avgValue30},#{stamp})
+        ]]>
+    </insert>
+
+    <!-- 获取光照量信息 -->
+    <select id="getHourLuxs" parameterType="java.util.HashMap"
+            resultType="Lux">
+        <![CDATA[
+			SELECT
+				t.sensorPhysicalvalue as lux,
+				t.createtime as datetime
+			FROM
+				`${locationId}` t
+			WHERE 
+				t.sensorPhysicalid = 41 
+			AND 
+				t.createtime BETWEEN #{startTime} AND #{endTime}
+			AND 
+				t.state = 1
+        ]]>
+	</select>
+
+    <!-- 获取小时降雨量信息 -->
+    <select id="getHourRbSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE 
+				t.sensorPhysicalid = 47 
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND 
+				t.state = 1
+        ]]>
+	</select>
+    <select id="getAvgByTimeAndSensorId" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+         <![CDATA[
+          SELECT
+				AVG(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE
+				t.sensorPhysicalid = #{sensorId}
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND
+				t.state = 1
+        ]]>
+    </select>
+
+    <!-- 获取有机污染物小时信息 -->
+    <select id="getHourOpSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE
+				t.sensorPhysicalid = 3075
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND
+				t.state = 1
+        ]]>
+	</select>
+
+    <!-- 获取无机污染物小时信息 -->
+    <select id="getHourIpSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE
+				t.sensorPhysicalid = 3076
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND
+				t.state = 1
+        ]]>
+	</select>
+
+    <!-- 获取含硫污染物小时信息 -->
+    <select id="getHourSpSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE
+				t.sensorPhysicalid = 3077
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND
+				t.state = 1
+        ]]>
+	</select>
+
+    <!-- 获取小时蒸发量信息 -->
+    <select id="getHourEvapSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(t.sensorPhysicalvalue)
+			FROM
+				`${locationId}` t
+			WHERE
+				t.sensorPhysicalid = 80
+			AND
+				t.createtime
+				BETWEEN
+				  #{startDate}
+				AND
+				  #{endDate}
+			AND
+				t.state = 1
+        ]]>
+	</select>
+
+    <!-- 获取天降雨量信息 -->
+    <select id="getDayRbSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(rb)
+			FROM 
+				m_tbl_rb_hour_acc
+			WHERE 
+				nodeid = #{locationId}
+			AND 
+				ms_datetime 
+			BETWEEN 
+				#{startTime} AND #{endTime};
+        ]]>
+	</select>
+
+    <!-- 获取天降雨量信息 -->
+    <select id="getDayEvapSum" parameterType="java.util.HashMap"
+            resultType="java.lang.Double">
+        <![CDATA[
+			SELECT
+				SUM(rb)
+			FROM
+				m_tbl_evap_hour_acc
+			WHERE
+				nodeid = #{locationId}
+			AND
+				ms_datetime
+			BETWEEN
+				#{startTime} AND #{endTime};
+        ]]>
+	</select>
+
+    <!-- 获取玫瑰图信息 -->
+    <select id="getWindRoses" parameterType="java.util.HashMap"
+            resultType="WindRose">
+        <![CDATA[
+			SELECT
+				a.windmark,
+				b.windDirectionCount,
+				b.windSpeedAvg
+			FROM 
+				m_windmark a 
+			LEFT JOIN 
+			   (SELECT 
+			   		d.windDirection,
+			   		COUNT(d.windDirection) AS windDirectionCount,
+			   		ROUND(AVG(s.windSpeed),1) AS windSpeedAvg,
+			   		s.createtime 
+		   		FROM	
+					(SELECT 
+						t.sensorPhysicalvalue AS windDirection,
+						t.createtime 
+					FROM
+						`${locationId}` t
+					WHERE 
+						t.sensorPhysicalid = 48
+					AND 
+						t.createtime
+						BETWEEN
+						   #{startDate}
+						AND
+						   #{endDate}
+					AND 
+						t.state  = 1
+					) d
+				INNER JOIN
+					(SELECT 
+						l.sensorPhysicalvalue AS windSpeed,
+						l.createtime 
+					FROM
+						`${locationId}` l
+					WHERE 
+						l.sensorPhysicalid = 49 
+					AND 
+						l.createtime
+						BETWEEN
+						   #{startDate}
+						AND
+						   #{endDate}
+					AND 
+						l.state  = 1
+					) s
+				ON 
+					s.createtime = d.createtime
+				WHERE 
+					s.windSpeed > 0.2	
+				GROUP BY 
+					d.windDirection
+				) b
+			ON 
+				a.windmark = b.windDirection;
+        ]]>
+	</select>
+
+    <!-- 获取玫瑰图信息的条数 -->
+    <select id="getWindRoseCount" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT 
+		   		COUNT(0)
+	   		FROM	
+				(SELECT 
+					t.sensorPhysicalvalue AS windDirection,
+					t.createtime 
+				FROM
+					`${locationId}` t
+				WHERE 
+					t.sensorPhysicalid = 48
+				AND 
+				   t.createtime
+				   BETWEEN
+                      #{startDate}
+				   AND
+				      #{endDate}
+				AND 
+					t.state  = 1
+				) d
+			INNER JOIN
+				(SELECT 
+					l.sensorPhysicalvalue AS windSpeed,
+					l.createtime 
+				FROM
+					`${locationId}` l
+				WHERE 
+					l.sensorPhysicalid = 49 
+				AND
+				   l.createtime
+				   BETWEEN
+                      #{startDate}
+				   AND
+				      #{endDate}
+				AND 
+					l.state  = 1
+				) s
+			ON 
+				s.createtime = d.createtime
+		]]>
+        <if test="isCalmWind != false">
+            <![CDATA[
+				WHERE 
+					s.windSpeed <= 0.2
+			]]>
+        </if>
+    </select>
+
+
+    <!-- 根据数据查询数据的时间 -->
+    <select id="getCreateTimeByData" parameterType="java.util.HashMap"
+            resultType="java.util.Date">
+        <![CDATA[
+    		SELECT
+				t.createtime
+			FROM 
+				`${locationId}` t
+			WHERE 
+				DATE_FORMAT(t.createtime,'%Y-%m-%d') = DATE_FORMAT(#{date},'%Y-%m-%d')	
+			AND 
+				t.sensorPhysicalvalue = #{value}
+			AND
+			    t.sensorPhysicalid = #{sensorId}
+			LIMIT 1
+        ]]>
+	</select>
+
+    <!-- 获取均峰值数据版本号 -->
+    <select id="getAvgDataVersion" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+				dataVersion
+			FROM 
+				m_avgdata 
+			WHERE 
+				nodeid = #{deviceId}  
+			AND 
+				ms_date = #{date}  
+			AND 
+				sensorPhysicalid = #{sensorPhysicalid};      
+        ]]>
+	</select>
+
+    <!-- 获取小时降雨量数据版本号 -->
+    <select id="getHourRbDataVersion" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+				dataVersion
+			FROM 
+				m_tbl_rb_hour_acc 
+			WHERE 
+				nodeid = #{deviceId}  
+			AND 
+				ms_datetime = #{date}
+        ]]>
+	</select>
+
+    <!-- 获取天降雨量数据版本号 -->
+    <select id="getDayRbDataVersion" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+				dataVersion
+			FROM 
+				m_tbl_rb_day_acc 
+			WHERE 
+				nodeid = #{deviceId}  
+			AND 
+				ms_date = #{date}
+        ]]>
+	</select>
+
+    <!-- 获取玫瑰图数据版本号 -->
+    <select id="getWindRoseDataVersion" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+				dataVersion
+			FROM 
+				m_windrose 
+			WHERE 
+				nodeid = #{deviceId}  
+			AND 
+				ms_date = #{date}
+        ]]>
+	</select>
+
+    <!-- 获取小时光照数据版本号 -->
+    <select id="getHourLuxDataVersion" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+			SELECT
+				dataVersion
+			FROM 
+				m_tbl_lxh_acc 
+			WHERE 
+				nodeid = #{deviceId}  
+			AND 
+				ms_datetime = #{date}
+        ]]>
+	</select>
+
+    <!-- 添加均峰值信息 -->
+    <insert id="addAvgPeak" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_avgdata(id,nodeid,sensorPhysicalid,`maxValue`,maxTime,`minValue`,minTime,avgValue,waveValue,ms_date)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{sensorPhysicalid},#{max},#{maxTime},#{min},#{minTime},#{avg},#{waveValue},#{avgTime});
+        ]]>
+	</insert>
+
+    <!--添加区域均值信息-->
+    <insert id="addZoneAvgPeak" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_zone_avgdata(id, zoneId, sensorId, avgValue, ms_date)
+   			select UUID() id,
+                l.zoneId AS zoneId,
+                ms.sensorPhysicalid,
+                ROUND(AVG(m.avgValue), ms.sensorPrecision) AS avgValue,
+                m.ms_date AS msDate
+            FROM
+                m_avgdata m
+                    INNER JOIN
+                m_sensorinfo ms ON ms.sensorPhysicalid = m.sensorPhysicalid
+                    INNER JOIN
+                m_location l ON m.nodeid = l.id
+            WHERE
+                l.zoneId IS NOT NULL
+                    AND m.ms_date = DATE(#{date})
+            GROUP BY ms_date , l.zoneId , ms.sensorPhysicalid
+            ORDER BY ms_date , zoneId , ms.sensorPhysicalid;
+        ]]>
+    </insert>
+
+    <!-- 修改均峰值信息 -->
+    <update id="updateAvgPeak" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_avgdata 
+			SET 
+				`maxValue` = #{max},
+				maxTime = #{maxTime},
+				`minValue` = #{min},
+				minTime = #{minTime},
+				avgValue = #{avg},
+				waveValue = #{waveValue},
+				isupdate = 0
+			WHERE 
+				nodeid = #{locationId}
+			AND 
+				ms_date = #{avgTime} 
+			AND 
+				sensorPhysicalid = #{sensorPhysicalid} 
+        ]]>
+	</update>
+
+    <!-- 修改kdj信息 -->
+    <update id="updateKDJ" parameterType="Stock">
+        <![CDATA[
+
+            UPDATE
+              `m_stock`
+            SET
+              `beginValue` = #{beginValue},
+              `endValue` = #{endValue},
+              `maxValue` = #{maxValue},
+              `minValue` = #{minValue},
+              `k` = #{k},
+              `j` = #{j},
+              `d` = #{d},
+              `avgValue5` = #{avgValue5},
+              `avgValue10` = #{avgValue10},
+              `avgValue30` = #{avgValue30}
+            WHERE `locationId` = #{locationId}
+            AND `stamp` = DATE(#{stamp})
+            AND `sensorId` = #{sensorId}
+
+        ]]>
+	</update>
+
+
+    <!-- 修改设备监测指标达标率 -->
+    <update id="updateComplianceRate" parameterType="Threshold">
+        <![CDATA[
+			UPDATE
+              m_avgdata ma
+            SET
+              ma.complianceRate =
+              (SELECT
+                IF(
+                COUNT(sensorPhysicalValue) > 0,
+                SUM(IF(
+        ]]>
+        <if test="conditionType == 1">
+            <![CDATA[
+        a.sensorPhysicalValue BETWEEN (#{target}-#{floating}) AND (#{target}+#{floating})
+        ]]>
+        </if>
+        <if test="conditionType == 2">
+            <![CDATA[
+        a.sensorPhysicalValue > #{target}
+        ]]>
+        </if>
+        <if test="conditionType == 3">
+            <![CDATA[
+        a.sensorPhysicalValue < #{target}
+        ]]>
+        </if>
+        <if test="conditionType == 4">
+            <![CDATA[
+        a.sensorPhysicalValue >= #{target}
+        ]]>
+        </if>
+        <if test="conditionType == 5">
+            <![CDATA[
+        a.sensorPhysicalValue <= #{target}
+        ]]>
+        </if>
+        <![CDATA[
+                , 1, 0)) / SUM(1),
+                 0) AS rate
+              FROM
+                `${locationId}` a
+              WHERE a.sensorPhysicalId = #{sensorId}
+                AND a.createTime BETWEEN #{startTime}
+                AND #{endTime} GROUP BY a.sensorPhysicalId )
+            WHERE ma.nodeid= #{locationId}
+              AND ma.sensorPhysicalId = #{sensorId}
+              AND ma.ms_date = #{startTime}
+        ]]>
+    </update>
+
+
+    <!-- 添加小时降雨量信息 -->
+    <insert id="addHourRb" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_rb_hour_acc(id, nodeid, rb, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{rbSum},DATE_FORMAT(#{date},'%Y-%m-%d %H:00:00'));
+        ]]>
+	</insert>
+
+    <insert id="addHourAvgValue" parameterType="java.util.HashMap">
+      <![CDATA[
+    		INSERT INTO
+    			m_avgdata_hour(id, locationId,sensorPhysicalid, avgValue, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{sensorId},#{avgValue},DATE_FORMAT(#{datetime},'%Y-%m-%d %H:00:00'));
+        ]]>
+    </insert>
+
+    <!-- 添加小时有机污染物信息 -->
+    <insert id="addHourOp" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_op_hour_acc(id, locationId, op, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{opSum},DATE_FORMAT(#{date},'%Y-%m-%d %H:00:00'));
+        ]]>
+	</insert>
+
+    <!-- 添加小时无机污染物信息 -->
+    <insert id="addHourIp" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_ip_hour_acc(id, locationId, ip, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{ipSum},DATE_FORMAT(#{date},'%Y-%m-%d %H:00:00'));
+        ]]>
+	</insert>
+
+    <!-- 添加小时含硫污染物信息 -->
+    <insert id="addHourSp" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_sp_hour_acc(id, locationId, sp, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{spSum},DATE_FORMAT(#{date},'%Y-%m-%d %H:00:00'));
+        ]]>
+	</insert>
+
+    <!-- 添加小时降雨量信息 -->
+    <insert id="addHourEvap" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_evap_hour_acc(id, nodeid, evap, ms_datetime)
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{evapSum},DATE_FORMAT(#{date},'%Y-%m-%d %H:00:00'));
+        ]]>
+	</insert>
+
+
+    <!-- 修改小时降雨量信息 -->
+    <update id="updateHourRb" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_rb_hour_acc 
+			SET 
+				rb = #{rbSum},
+			 	isupdate = 0
+			WHERE 
+				nodeid = #{locationId}
+			AND  
+			  	DATE_FORMAT(ms_datetime,'%Y-%m-%d %H') = DATE_FORMAT(#{date},'%Y-%m-%d %H');						
+        ]]>
+	</update>
+
+    <!-- 修改小时有机污染物信息 -->
+    <update id="updateHourOp" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_op_hour_acc
+			SET
+				op = #{opSum}
+			WHERE
+				locationId = #{locationId}
+			AND
+			  	DATE_FORMAT(ms_datetime,'%Y-%m-%d %H') = DATE_FORMAT(#{date},'%Y-%m-%d %H');
+        ]]>
+	</update>
+
+    <!-- 修改小时无机污染物信息 -->
+    <update id="updateHourIp" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_ip_hour_acc
+			SET
+				ip = #{ipSum}
+			WHERE
+				locationId = #{locationId}
+			AND
+			  	DATE_FORMAT(ms_datetime,'%Y-%m-%d %H') = DATE_FORMAT(#{date},'%Y-%m-%d %H');
+        ]]>
+	</update>
+
+    <!-- 修改小时含硫污染物信息 -->
+    <update id="updateHourSp" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_sp_hour_acc
+			SET
+				sp = #{spSum}
+			WHERE
+				locationId = #{locationId}
+			AND
+			  	DATE_FORMAT(ms_datetime,'%Y-%m-%d %H') = DATE_FORMAT(#{date},'%Y-%m-%d %H');
+        ]]>
+	</update>
+
+    <!-- 修改小时蒸发量信息 -->
+    <update id="updateHourEvap" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_evap_hour_acc
+			SET
+				evap = #{evapSum},
+				isupdate = 0
+            WHERE
+				nodeid = #{locationId}
+			AND
+			  	DATE_FORMAT(ms_datetime,'%Y-%m-%d %H') = DATE_FORMAT(#{date},'%Y-%m-%d %H');
+        ]]>
+	</update>
+
+    <!-- 添加天降雨量信息 -->
+    <insert id="addDayRb" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_rb_day_acc (id,nodeid,rb,ms_date) 
+   			VALUES
+   				((SELECT UUID()),#{locationId},#{rbSum},#{date});
+        ]]>
+	</insert>
+
+
+    <!-- 修改天降雨量信息 -->
+    <update id="updateDayRb" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_rb_day_acc 
+			SET 
+				rb = #{rbSum}, 
+				isupdate = 0
+		    WHERE
+		    	nodeid = #{locationId}
+	    	AND
+	    	 	ms_date = #{date};			
+        ]]>
+	</update>
+
+    <!-- 添加小时光照量信息 -->
+    <insert id="addHourLux" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_tbl_lxh_acc
+   		        (id,nodeid,lx_h,ms_datetime,season)
+ 			VALUES	 
+				((SELECT UUID()),#{locationId},#{sumLux},#{date},#{season})
+        ]]>
+	</insert>
+
+    <update id="updateHourLux" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_tbl_lxh_acc 
+			SET 
+				lx_h = #{sumLux}, 
+				season = #{season},
+				isupdate = 0
+			WHERE 
+				nodeid = #{locationId}
+			AND 
+				ms_datetime = #{date};
+        ]]>
+	</update>
+
+    <!-- 添加玫瑰图信息 -->
+    <insert id="addWindRose" parameterType="java.util.HashMap">
+        <![CDATA[
+    		INSERT INTO
+    			m_windrose
+   		        (id, nodeid, O_N, S_N, O_NNE, S_NNE, O_NE, S_NE, O_ENE, S_ENE, O_E,  S_E,  O_ESE, S_ESE, O_SE, S_SE, O_SSE, S_SSE,
+                 O_S,  S_S, O_SSW, S_SSW, O_SW, S_SW, O_WSW, S_WSW, O_W, S_W, O_WNW, S_WNW, O_NW, S_NW, O_NNW, S_NNW, windcalm,
+ 				 sum, ms_date, season)
+ 			VALUES	 
+				((SELECT UUID()),#{locationId},#{o_n}, #{s_n}, #{o_nne}, #{s_nne}, #{o_ne}, #{s_ne}, #{o_ene}, #{s_ene}, #{o_e},
+				 #{s_e},#{o_ese},#{s_ese}, #{o_se}, #{s_se}, #{o_sse}, #{s_sse}, #{o_s},  #{s_s}, #{o_ssw}, #{s_ssw}, #{o_sw}, 
+				 #{s_sw}, #{o_wsw},#{s_wsw},#{o_w}, #{s_w}, #{o_wnw}, #{s_wnw}, #{o_nw}, #{s_nw}, #{o_nnw}, #{s_nnw}, #{windCalm},
+				 #{sum}, #{date}, #{season})
+        ]]>
+	</insert>
+
+    <!-- 修改玫瑰图信息 -->
+    <update id="updateWindRose" parameterType="java.util.HashMap">
+        <![CDATA[
+			UPDATE
+				m_windrose 
+			SET 
+			    `O_N` = #{o_n},
+			    `S_N` = #{s_n},
+			    `O_NNE` = #{o_nne},
+			    `S_NNE` = #{s_nne},
+			    `O_NE` = #{o_ne},
+			    `S_NE` = #{s_ne},
+			    `O_ENE` = #{o_ene},
+			    `S_ENE` = #{s_ene},
+			    `O_E` = #{o_e},
+			    `S_E` = #{s_e},
+			    `O_ESE` = #{o_ese},
+			    `S_ESE` = #{s_ese},
+			    `O_SE` = #{o_se},
+			    `S_SE` = #{s_se},
+			    `O_SSE` = #{o_sse},
+			    `S_SSE` = #{s_sse},
+			    `O_S` = #{o_s},
+			    `S_S` = #{s_s},
+			    `O_SSW` = #{o_ssw},
+			    `S_SSW` = #{s_ssw},
+			    `O_SW` = #{o_sw},
+			    `S_SW` = #{s_sw},
+			    `O_WSW` = #{o_wsw},
+			    `S_WSW` = #{s_wsw},
+			    `O_W` = #{o_w},
+			    `S_W` = #{s_w},
+			    `O_WNW` = #{o_wnw},
+			    `S_WNW` = #{s_wnw},
+			    `O_NW` = #{o_nw},
+			    `S_NW` = #{s_nw},
+			    `O_NNW` = #{o_nnw},
+			    `S_NNW` = #{s_nnw},
+			    `windcalm` = #{windCalm},
+			    `sum` = #{sum},
+			    isupdate = 0
+		   WHERE
+			    nodeid = #{locationId}
+	       AND 
+	       		ms_date = #{date};		
+        ]]>
+	</update>
+
+    <!-- 是否存在小时照度累计数据 -->
+    <parameterMap id="isExistHourLux-param" type="java.util.HashMap">
+        <parameter property="locationId" javaType="java.lang.String"
+                   jdbcType="VARCHAR"/>
+        <parameter property="datetime" javaType="java.util.Date"
+                   jdbcType="TIMESTAMP"/>
+    </parameterMap>
+    <select id="isExistHourLux" parameterMap="isExistHourLux-param"
+            resultType="java.lang.Boolean">
+        <![CDATA[
+		     select  fun_isExistHourLux(?,?) as fun
+        ]]>
+	</select>
+
+    <!-- 是否存在小时降水量数据 -->
+    <parameterMap id="isExistHourRB-param" type="java.util.HashMap">
+        <parameter property="locationId" javaType="java.lang.String"
+                   jdbcType="VARCHAR"/>
+        <parameter property="datetime" javaType="java.util.Date"
+                   jdbcType="TIMESTAMP"/>
+    </parameterMap>
+    <select id="isExistHourRB" parameterMap="isExistHourRB-param"
+            resultType="java.lang.Boolean">
+        <![CDATA[
+		     select fun_isExistHourRb(?,?) as fun
+        ]]>
+	</select>
+
+    <select id="isExistHourOp" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT COUNT(1) FROM `m_tbl_op_hour_acc` m WHERE m.`locationId` = #{locationId} AND m.`ms_datetime` = #{datetime};
+        ]]>
+	</select>
+
+    <select id="isExistHourIp" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT COUNT(1) FROM `m_tbl_ip_hour_acc` m WHERE m.`locationId` = #{locationId} AND m.`ms_datetime` = #{datetime};
+        ]]>
+	</select>
+
+    <select id="isExistHourSp" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT COUNT(1) FROM `m_tbl_sp_hour_acc` m WHERE m.`locationId` = #{locationId} AND m.`ms_datetime` = #{datetime};
+        ]]>
+	</select>
+
+    <select id="isExistHourEvap" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT COUNT(1) FROM `m_tbl_evap_hour_acc` m WHERE m.`nodeid` = #{locationId} AND m.`ms_datetime` = #{datetime};
+        ]]>
+	</select>
+
+    <select id="isExistDayEvap" parameterType="java.util.HashMap"
+            resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT COUNT(1) FROM `m_tbl_evap_day_acc` m WHERE m.`nodeid` = #{locationId} AND m.`ms_date` = #{date};
+        ]]>
+	</select>
+
+    <!-- 是否存在均峰值数据 -->
+    <parameterMap id="isExistDatePeakAvg-param" type="java.util.HashMap">
+        <parameter property="locationId" javaType="java.lang.String"
+                   jdbcType="VARCHAR"/>
+        <parameter property="date" javaType="java.lang.String"
+                   jdbcType="DATE"/>
+        <parameter property="sensorPhysicalId" javaType="java.lang.Integer"
+                   jdbcType="INTEGER"/>
+    </parameterMap>
+    <select id="isExistDatePeakAvg" parameterMap="isExistDatePeakAvg-param"
+            resultType="java.lang.Boolean">
+        <![CDATA[
+		     select fun_isExistAvg(?,?,?) as fun
+        ]]>
+	</select>
+
+    <select id="isExistDataKDJ" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+        SELECT
+          count(id)
+        FROM
+          m_stock
+        WHERE locationId = #{locationId}
+        AND sensorId = #{sensorId}
+        AND stamp = DATE(#{date})
+    </select>
+
+    <!-- 是否存在日降水量数据 -->
+    <parameterMap id="isExistDayRB-param" type="java.util.HashMap">
+        <parameter property="locationId" javaType="java.lang.String"
+                   jdbcType="VARCHAR"/>
+        <parameter property="date" javaType="java.util.Date"
+                   jdbcType="DATE"/>
+    </parameterMap>
+    <select id="isExistDayRB" parameterMap="isExistDayRB-param"
+            resultType="java.lang.Boolean">
+        <![CDATA[
+		     select fun_isExistDateRb(?,?) as fun
+        ]]>
+	</select>
+
+    <!-- 是否存在风向玫瑰图数据 -->
+    <parameterMap id="isExistDateRose-param" type="java.util.HashMap">
+        <parameter property="locationId" javaType="java.lang.String"
+                   jdbcType="VARCHAR"/>
+        <parameter property="date" javaType="java.util.Date"
+                   jdbcType="TIMESTAMP"/>
+    </parameterMap>
+    <select id="isExistDateRose" parameterMap="isExistDateRose-param"
+            resultType="java.lang.Boolean">
+        <![CDATA[
+		     select fun_isExistWindRose(?,?) as fun
+        ]]>
+	</select>
+
+
+    <select id="getPmSensorData" parameterType="java.util.HashMap" resultType="NodeData">
+        SELECT
+          m.id,
+          m.nodeid,
+          m.sensorPhysicalid AS sensorPhysicalId,
+          AVG(m.`sensorPhysicalvalue`) AS sensorPhysicalvalue,
+          m.lowvoltage AS voltage,
+          m.createtime AS createTime,
+          m.state,
+          m.anomaly
+        FROM
+          (SELECT
+            *
+          FROM
+            `m_pm_sensor_data` md
+          WHERE md.`createtime`
+          BETWEEN #{startDate}
+          AND
+            #{endDate}
+          ORDER BY md.`createtime` DESC) m
+        GROUP BY m.`nodeid`,
+          m.`sensorPhysicalid`
+    </select>
+
+    <delete id="deleteSensors" parameterType="java.util.HashMap">
+        DELETE
+        FROM
+          `m_pm_sensor_data`
+        WHERE nodeid = #{deviceId}
+        AND sensorPhysicalid = #{sensorId}
+    </delete>
+
+    <delete id="deleteZoneAvgPeak" parameterType="java.util.HashMap">
+        DELETE
+        FROM
+        `m_zone_avgdata`
+        WHERE ms_date = date(#{date})
+    </delete>
+</mapper>

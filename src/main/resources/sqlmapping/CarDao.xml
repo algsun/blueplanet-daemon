@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Car">
+    <select id="findCarIdByLocationId" parameterType="java.lang.String" resultType="java.lang.Integer">
+        <![CDATA[
+        SELECT
+            h.carId
+        FROM
+            h_device as h
+        WHERE
+            h.deviceId = #{value}
+        ]]>
+    </select>
+</mapper>

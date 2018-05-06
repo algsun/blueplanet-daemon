@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+
+	<!-- 数据同步tcpServer监听服务线程 TcpServerThread -->
+	<bean id="TcpServerThread" class="com.microwise.msp.platform.thread.TcpServerThread" destroy-method="shutdown" />
+
+
+	<!-- 数据同步 ClientHandler -->
+	<bean id="ClientHandler" class="com.microwise.msp.platform.handler.ClientHandler"
+		scope="singleton">
+		<property name="dataTransfer" ref="DataTransferService" />
+	</bean>
+
+	<!-- 数据同步 ServerHandler -->
+	<bean id="ServerHandler" class="com.microwise.msp.platform.handler.ServerHandler"
+		scope="singleton">
+		<property name="dataTransfer" ref="DataTransferService" />
+	</bean>
+
+	<!-- 数据同步 Service -->
+	<bean id="DataTransferService"
+		class="com.microwise.msp.platform.service.impl.DataTransferServiceImpl">
+		<property name="dao" ref="DataTransferDao" />
+	</bean>
+
+	<!-- 数据同步 Dao -->
+	<bean id="DataTransferDao" class="com.microwise.msp.platform.dao.impl.DataTransferDaoImpl">
+	</bean>
+
+
+
+	<!-- 实体Bean -->
+	<!-- 数据同步日志 Bean -->
+	<bean id="LogTransfer" class="com.microwise.msp.platform.bean.LogTransfer" />
+	<!-- 节点信息 Bean -->
+	<bean id="Nodeinfo" class="com.microwise.msp.platform.bean.NodeInfo" />
+	<!-- 节点传感 Bean -->
+	<bean id="Nodesensor" class="com.microwise.msp.platform.bean.Nodesensor" />
+	<!-- 节点数据 Bean -->
+	<bean id="Node" class="com.microwise.msp.platform.bean.NodeCls" />
+	<!-- 节点内存，实时数据 Bean -->
+	<bean id="Nodeinfomemory" class="com.microwise.msp.platform.bean.Nodeinfomemory" />
+	<!-- 均峰值数据 Bean -->
+	<bean id="Avgdata" class="com.microwise.msp.platform.bean.Avgdata" />
+	<!-- 区域，接入点对应 Bean -->
+	<bean id="Mapping_area_site" class="com.microwise.msp.platform.bean.Mapping_area_site" />
+	<!-- 接入点，节点对应 Bean -->
+	<bean id="Mapping_site_node" class="com.microwise.msp.platform.bean.Mapping_site_node" />
+	<!-- 日光照量 Bean -->
+	<bean id="Tbl_lxh_acc" class="com.microwise.msp.platform.bean.Tbl_lxh_acc" />
+	<!-- 日降雨量 Bean -->
+	<bean id="Tbl_rb_day_acc" class="com.microwise.msp.platform.bean.Tbl_rb_day_acc" />
+	<!-- 小时降雨量 Bean -->
+	<bean id="Tbl_rb_hour_acc" class="com.microwise.msp.platform.bean.Tbl_rb_hour_acc" />
+	<!-- 风向玫瑰图 日统计值 Bean -->
+	<bean id="Windrose" class="com.microwise.msp.platform.bean.Windrose" />
+
+
+
+
+</beans>

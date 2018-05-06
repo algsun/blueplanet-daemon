@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration packages="com.microwise.msp.util">
+    <appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+        </Console>
+
+        <MemoryQueue name="memoryQueue">
+            <PatternLayout pattern="%d %m%n" charset="utf-8"/>
+        </MemoryQueue>
+
+        <RollingFile name="file"
+                     fileName="${sys:catalina.home}/logs/blueplanet-daemon/app.log"
+                     filePattern="${sys:catalina.home}/logs/blueplanet-daemon/app-$${date:yyyy-MM-dd}/%d{MM-dd}--%i.log">
+            <PatternLayout pattern="%d %-5p %C{2} (%F:%L) - %m%n" charset="utf-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="100"/>
+        </RollingFile>
+
+        <!-- 每天一个文件夹 -->
+        <RollingFile name="packetFile"
+                     fileName="${sys:catalina.home}/logs/blueplanet-daemon/packet.log"
+                     filePattern="${sys:catalina.home}/logs/blueplanet-daemon/packet-$${date:yyyy-MM-dd}/%d{MM-dd}--%i.log">
+            <PatternLayout pattern="%d %m%n" charset="utf-8"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <!-- 一个日志文件最大大小 -->
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            <!-- 一个文件夹的日志文件个数 -->
+            <DefaultRolloverStrategy max="100"/>
+        </RollingFile>
+
+        <!--<SMTP name="SMTPAppender"-->
+              <!--suppressExceptions="false"-->
+              <!--smtpHost="smtp.mxhichina.com"-->
+              <!--smtpPort="25"-->
+              <!--from="jian.kong@microwise-system.com"-->
+              <!--to="li.jianfei@microwise-system.com"-->
+              <!--subject="blueplanet-daemon[阿里云]"-->
+              <!--smtpUsername="jian.kong@microwise-system.com"-->
+              <!--smtpPassword="Abc123456"-->
+              <!--smtpDebug="false"-->
+              <!--bufferSize="50">-->
+            <!--<Filters>-->
+                <!--<ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>-->
+            <!--</Filters>-->
+        <!--</SMTP>-->
+    </appenders>
+    <loggers>
+        <root level="INFO">
+            <appender-ref ref="console"/>
+            <appender-ref ref="file"/>
+        </root>
+
+        <logger name="com.microwise.msp.hardware.handler.codec.Packets" level="info">
+            <appender-ref ref="packetFile"/>
+            <appender-ref ref="memoryQueue"/>
+        </logger>
+
+    </loggers>
+</configuration>

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:contenxt="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+       http://www.springframework.org/schema/tx   
+       http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+    <contenxt:component-scan base-package="com.microwise.msp"/>
+    <aop:aspectj-autoproxy/>
+
+    <!-- scope="prototype" 多实例 scope="singleton" 单例 -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config.properties</value>
+                <value>classpath:email-config.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <!-- 数据源定义 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="false">
+        <property name="driverClassName"
+                  value="${connection.driverClassName}"/>
+        <property name="url" value="${connection.url}"/>
+        <property name="username" value="${connection.username}"/>
+        <property name="password" value="${connection.password}"/>
+        <!-- 连接池启动时创建的初始化连接数量，默认为0 -->
+        <property name="initialSize" value="5"/>
+        <!-- 连接池最大并发连接数，默认为8 -->
+        <property name="maxActive" value="20"/>
+        <!-- 最大等待时间，当没有可用连接时，连接池等待连接释放的最大时间，超过该时间抛出异常，设置-1表示无限等待(默认为无限) -->
+        <property name="maxWait" value="60000"/>
+
+
+        <!-- 连接池中最大空闲连接数，负数表示不限制(默认为8，不能设置太小，高负载时， 连接打开时间比关闭时间快，
+            会引起连接池中idle的个数上升超过maxIdle，而造成频繁的连接销毁和创建，类似于jvm参数中的Xmx设置) -->
+        <property name="maxIdle" value="8"/>
+        <!-- 连接池中最小空闲连接数，低于这个数量会创建新的连接(默认为0，调整为5，该参数越接近maxIdle，性能越好，因为连接的创建和销毁，都是需要消耗资源的,但是不能太大，
+            因为在机器很空闲的时候，也会创建低于minidle个数的连接，类似于jvm参数中的Xmn设置 -->
+        <property name="minIdle" value="5"/>
+        <!-- 超过removeAbandonedTimeout时间后，是否进行没用连接（废弃）的回收（默认为false，调整为true) -->
+        <property name="removeAbandoned" value="true"/>
+        <!-- 超过时间限制，回收没有用(废弃)的连接(默认为 300秒，调整为180) -->
+        <property name="removeAbandonedTimeout" value="300"/>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="classpath:sqlmapping/sqlMapConfig.xml"/>
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <!-- 定义事务管理器(声明式事务) -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    <!-- 持久化基础dao -->
+    <bean id="BaseDao" class="com.microwise.msp.hardware.dao.impl.BaseDaoImpl">
+    </bean>
+
+    <!-- 数据解析 dao (extends BaseDao)-->
+    <bean id="AnalysisDao" class="com.microwise.msp.hardware.dao.impl.AnalysisDaoImpl">
+    </bean>
+
+    <!-- 原始数据包 dao (extends BaseDao) -->
+    <bean id="dataPacketDao" class="com.microwise.msp.hardware.dao.impl.DataPacketDaoImpl">
+    </bean>
+
+    <!-- 下行命令、命令响应 dao (extends BaseDao) -->
+    <bean id="DcoOperateDao" class="com.microwise.msp.hardware.dao.impl.DcoOperateDaoImpl">
+    </bean>
+
+    <!-- 数据回补操作dao (extends BaseDao) -->
+    <bean id="SupplymentDataDao" class="com.microwise.msp.hardware.dao.impl.SupplymentDataDaoImpl">
+    </bean>
+
+
+    <!-- 系统初始化 Service -->
+    <bean id="SystemInitService" class="com.microwise.msp.hardware.businessservice.SystemInitService">
+        <property name="dao" ref="BaseDao"/>
+        <property name="supplymentDataDao" ref="SupplymentDataDao"/>
+    </bean>
+
+
+    <!-- DeviceService -->
+    <bean id="DeviceService" class="com.microwise.msp.hardware.businessservice.DeviceService">
+    </bean>
+
+    <!-- 网关 Service( extends DeviceService) -->
+    <bean id="GatewayService" class="com.microwise.msp.hardware.businessservice.GatewayService">
+    </bean>
+
+    <!-- 中继 Service( extends DeviceService) -->
+    <bean id="RelayService" class="com.microwise.msp.hardware.businessservice.RelayService">
+    </bean>
+
+    <!-- 节点 Service( extends DeviceService) -->
+    <bean id="NodeService" class="com.microwise.msp.hardware.businessservice.NodeService">
+        <property name="sensorService" ref="SensorService"/>
+        <property name="supplymentDataDao" ref="SupplymentDataDao"/>
+    </bean>
+
+
+    <!-- 传感(衍生新传感、特殊传感量计算等)Service( extends DeviceService) -->
+    <!-- 特别注意：需要在此处注入DeviceBean、AnalysisDao(父类DeviceService中有此属性注入)否则报空指针异常 -->
+    <bean id="SensorService" class="com.microwise.msp.hardware.businessservice.SensorService">
+        <property name="dao" ref="AnalysisDao"/>
+    </bean>
+
+    <!--&lt;!&ndash; 数据持久化 Service &ndash;&gt;-->
+    <!--<bean id="dataPersistenceService" class="com.microwise.msp.hardware.businessservice.DataPersistenceService">-->
+        <!--<property name="dao" ref="AnalysisDao"/>-->
+        <!--<property name="packetDao" ref="dataPacketDao"/>-->
+        <!--&lt;!&ndash;<property name="appCache" ref="AppCache"/>&ndash;&gt;-->
+    <!--</bean>-->
+
+
+    <!-- 数据持久化 Thread(提升入库效率) -->
+    <bean id="dataPersistenceThread" class="com.microwise.msp.hardware.threads.DataPersistenceThread"
+          destroy-method="shutdown">
+        <property name="dataPersistenceService"
+                  ref="dataPersistenceService"/>
+    </bean>
+
+
+    <!--&lt;!&ndash; 空数据检查 Thread &ndash;&gt;-->
+    <!--<bean id="TimeoutCheckingThread" class="com.microwise.msp.hardware.threads.TimeoutCheckingThread"-->
+          <!--destroy-method="shutdown">-->
+        <!--<property name="nodeService" ref="NodeService"/>-->
+        <!--&lt;!&ndash;<property name="appCache" ref="AppCache"/>&ndash;&gt;-->
+    <!--</bean>-->
+
+
+    <!-- 下行控制 业务处理 Service -->
+    <bean id="DcoOperateService" class="com.microwise.msp.hardware.businessservice.DcoOperateService">
+        <property name="dao" ref="DcoOperateDao"/>
+        <property name="supplymentDataDao" ref="SupplymentDataDao"/>
+    </bean>
+    <!-- 下行命令、命令响应 Thread -->
+    <!-- 废弃 @gaohui 2014-04-29
+	<bean id="DcoFeedBackThread" class="com.microwise.msp.hardware.threads.DcoFeedBackThread" destroy-method="shutdown">
+		<property name="dcoService" ref="DcoOperateService" />
+	</bean>
+	-->
+
+
+
+
+    <!-- 网络管理 dao  -->
+    <bean id="NetManagerDao"
+          class="com.microwise.msp.hardware.dao.impl.NetManagerDaoImpl">
+    </bean>
+    <!-- 网络管理 Service -->
+    <bean id="NetLinkService"
+          class="com.microwise.msp.hardware.netlink.NetLinkService">
+        <property name="dao" ref="NetManagerDao"/>
+    </bean>
+
+
+    <!-- 数据回补 -->
+    <bean id="SupplymentDataService"
+          class="com.microwise.msp.hardware.businessservice.SupplymentDataService">
+        <property name="supplymentDataDao" ref="SupplymentDataDao"/>
+        <property name="dcoOperateService" ref="DcoOperateService"/>
+    </bean>
+
+    <bean id="SupplymentCacheDataThread"
+          class="com.microwise.msp.hardware.threads.SupplymentCacheDataThread"
+          destroy-method="shutdown">
+        <property name="supplymentDataService"
+                  ref="SupplymentDataService"/>
+    </bean>
+
+    <bean id="SupplymentGatewayDataThread"
+          class="com.microwise.msp.hardware.threads.SupplymentGatewayDataThread"
+          destroy-method="shutdown">
+        <property name="supplymentDataService"
+                  ref="SupplymentDataService"/>
+    </bean>
+
+
+    <!-- quartz -->
+    <bean name="scheduleFactory" class="org.quartz.impl.StdSchedulerFactory"/>
+    <bean name="scheduler" factory-bean="scheduleFactory" factory-method="getScheduler" init-method="start"
+          destroy-method="shutdown"/>
+    <bean name="statsJobInitor" class="com.microwise.msp.hardware.common.StatsJobInitor" init-method="init"
+          lazy-init="false">
+        <constructor-arg index="0" ref="scheduler"/>
+    </bean>
+    <bean name="supplymentJobInitor" class="com.microwise.msp.hardware.common.SupplymentJobInitor" init-method="init"
+          lazy-init="false">
+        <constructor-arg index="0" ref="scheduler"/>
+    </bean>
+
+    <bean name="dataProcessInitor" class="com.microwise.msp.hardware.common.DataProcessInitor" lazy-init="false"/>
+    <bean name="switchActionJobInitializer" class="com.microwise.msp.hardware.common.SwitchActionJobInitializer"
+          lazy-init="false"/>
+    <bean name="CommandSendInitor" class="com.microwise.msp.hardware.common.CommandSendJobInitor" lazy-init="false"/>
+    <bean name="analysisDataFileJobInitor" class="com.microwise.msp.hardware.common.AnalysisDataFileJobInitor"
+          init-method="init" lazy-init="false"/>
+
+    <!--<bean name="UploadSNToOnlineJobInitor" class="com.microwise.msp.hardware.common.UploadSNToOnlineJobInitor"-->
+          <!--lazy-init="false"/>-->
+    <!-- threadWorkers -->
+    <bean name="threadWorkers" class="com.microwise.msp.hardware.handler.agent.ThreadWorkers" destroy-method="shutdown">
+        <!-- 线程数, 默认自动分配 -->
+        <!--<constructor-arg index="0" value="5"/>-->
+    </bean>
+
+
+    <!-- email -->
+
+    <!--用来发送单个邮件 -->
+    <bean name="commonMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="${smtp.host}"/>
+        <property name="port" value="${smtp.port}"/>
+        <property name="username" value="${smtp.username}"/>
+        <property name="password" value="${smtp.password}"/>
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.localhost">127.0.0.1</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- 用来发送批量邮件 -->
+    <bean name="batchMailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+        <property name="host" value="${smtp.host}"/>
+        <property name="port" value="${smtp.port}"/>
+        <property name="username" value="${smtp.batch.username}"/>
+        <property name="password" value="${smtp.batch.password}"/>
+        <property name="javaMailProperties">
+            <props>
+                <prop key="mail.smtp.auth">true</prop>
+                <prop key="mail.smtp.localhost">127.0.0.1</prop>
+            </props>
+        </property>
+    </bean>
+
+
+    <!-- 引入平台接入子系统配置文件 -->
+    <import resource="app-platform.xml"/>
+</beans>

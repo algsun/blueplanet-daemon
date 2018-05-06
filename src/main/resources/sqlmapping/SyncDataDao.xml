@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="SyncData">
+    <!-- 将位置点历史数据转化为 o_sync_data -->
+    <select id="convertHistoryDataToSyncData" parameterType="java.util.Map" >
+        <![CDATA[
+			INSERT INTO o_sync_data(tableName, pkColumn, VALUE, event, siteId, TIME)
+            SELECT #{tableName} AS tableName,
+                'id' AS pkColumn,
+                id AS VALUE,
+                'ADD' AS EVENT,
+                LEFT(#{tableName}, 8) AS siteId,
+                NOW() AS TIME
+            FROM `${tableName}` WHERE createTime = #{createTime}
+		]]>
+    </select>
+</mapper>

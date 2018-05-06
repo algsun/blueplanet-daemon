@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:12 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Source">
+
+    <select id="findSourceNameById" parameterType="java.util.Map" resultType="java.lang.String">
+        SELECT
+        <if test="systemFlag == 1">
+            s.siteName
+        </if>
+        <if test="systemFlag == 2">
+            o.office_name
+        </if>
+        FROM
+        <if test="systemFlag == 1">
+            t_site AS s
+        </if>
+        <if test="systemFlag == 2">
+            sys_office AS o
+        </if>
+        WHERE
+        <if test="systemFlag == 1">
+            s.siteId = #{sourceId}
+        </if>
+        <if test="systemFlag == 2">
+            o.id = #{sourceId}
+        </if>
+    </select>
+
+
+</mapper>

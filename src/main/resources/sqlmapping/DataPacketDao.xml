@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- 原始数据包缓存 回滚至1147 --><!--Converted at: Fri Jul 19 15:52:04 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DataPacket">
+
+	<!-- 缓存模型的属性 MEMORY LRU FIFO 24小时后清空缓存 执行selAll操作后清空缓存 定义缓存区大小 -->
+	<!-- <cacheModel type="LRU" id="scoresCache"> <flushInterval hours="24" 
+		/> <flushOnExecute statement="selAll" /> <property name="size" value="1000" 
+		/> </cacheModel> -->
+
+
+	<!-- 创建原始数据包缓存(packet_节点号)表 -->
+	<update id="createPacketTable" parameterType="java.lang.String">
+        <![CDATA[
+		   	CREATE TABLE  `${value}` (
+		   	   `nodeid` varchar(50) NOT NULL COMMENT '节点号',
+			   `stamp` datetime NOT NULL COMMENT '时间戳',
+			   `stamp_hour` datetime NOT NULL COMMENT '时间戳_小时',
+			   `sequence` int(11) NOT NULL COMMENT '包序列号',
+			   `packet` varchar(1000) NOT NULL COMMENT '原始数据包',			   			   
+                INDEX(stamp)
+			 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='数据包缓存';
+		 ]]>
+	</update>
+
+	<!-- 判断原始数据缓存表中是否已经存在 -->
+	<select id="isExistPacket" parameterType="DeviceBean" resultType="java.lang.Integer">
+        <![CDATA[
+		    SELECT
+			  COUNT(nodeid)
+			FROM `packet_${deviceid}` AS t
+			WHERE t.nodeid = #{deviceid}
+			    AND t.stamp = #{timeStamp}
+		 ]]>
+	</select>
+
+	<!-- 保存原始数据包 -->
+	<insert id="savePacket" parameterType="DeviceBean">
+        <![CDATA[
+		INSERT INTO `packet_${deviceid}`
+            (nodeid,
+             stamp,
+             stamp_hour,
+             sequence,
+             packet)
+		VALUES (#{deviceid},
+		        #{timeStamp},
+		        DATE_FORMAT(#{timeStamp},'%Y-%m-%d %H:00:00'),
+		        #{sequence},
+		        #{packet})  
+		 ]]>
+	</insert>
+
+	<!-- 数据回补查询 -->
+	<select id="findPackets" parameterType="java.util.HashMap" resultType="ttDataPacket">
+        <![CDATA[
+		     SELECT
+					    nodeid AS nodeid, 
+						stamp  AS stamp, 
+						packet AS packet
+			 FROM 
+			           `${nodeId}` as t
+			 WHERE     t.stamp_hour = #{stamp}
+		 ]]>
+	</select>
+
+
+
+</mapper>

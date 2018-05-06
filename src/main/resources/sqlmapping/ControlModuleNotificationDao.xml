@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:07 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ControlModuleNotification">
+
+    <select id="findAllBySiteId"  parameterType="string" resultType="ControlModuleNotification">
+        <![CDATA[
+        SELECT
+          id,
+          siteId,
+          userId,
+          subscribeType,
+          triggerEvent,
+          notifyMethod
+        FROM
+          m_control_module_notification
+        WHERE siteId = #{siteId}
+        ]]>
+    </select>
+
+    <select id="findDevicesByNotificationId" parameterType="string" resultType="string">
+        <![CDATA[
+        SELECT deviceId FROM m_control_module_notification_device WHERE notifyId = #{notifyId}
+        ]]>
+    </select>
+
+    <select id="findAlias" parameterType="string" resultType="string">
+        <![CDATA[
+            SELECT
+              alias
+            FROM
+              m_nodeinfo AS mn
+            INNER JOIN m_control_module_switch AS mc
+              ON mn.`nodeid` = mc.`node_id`
+            WHERE mn.`nodeid` = #{deviceId}
+        ]]>
+    </select>
+
+</mapper>

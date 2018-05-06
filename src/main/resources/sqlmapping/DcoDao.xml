@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:07 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Dco">
+
+    <select id="findRootNodeIdBySiteId" parameterType="string" resultType="string">
+        <![CDATA[
+            SELECT n.nodeid
+            FROM m_nodeinfomemory AS m
+            INNER JOIN m_nodeinfo AS n
+              ON m.nodeid = n.nodeid
+            where (n.nodeType = 7 OR m.parentIP = m.childIP) and n.siteId = #{siteId} and m.anomaly = 0;
+        ]]>
+    </select>
+
+	<!-- 获取自身IP -->
+	<select id="getChildIp" parameterType="java.lang.String" resultType="java.lang.Integer">
+        <![CDATA[
+		    SELECT
+			  childIP
+			FROM m_nodeinfomemory
+			WHERE nodeid =#{value} 
+		 ]]>
+	</select>
+
+
+	<!-- 获取父节点IP和节点类型 --> 
+	<select id="getParent" parameterType="java.util.HashMap" resultType="DeviceBean">
+        <![CDATA[
+		     SELECT
+			  m.parentIP AS parentid,
+			  n.nodeType AS deviceType
+			FROM m_nodeinfomemory AS m,
+			  m_nodeinfo AS n
+			WHERE n.nodeid = m.nodeid
+			    AND m.childIP=#{childIP}
+			    AND n.siteId=#{siteId}
+		 ]]>
+	</select>
+
+
+	<!-- 是否存在相同的命令,何明明2013-2-4,目标ID+包序列号+指令编号 -->
+	<select id="isSameOrder" parameterType="Dco_Order" resultType="java.lang.Integer">
+        <![CDATA[
+		     SELECT
+				COUNT(1) 
+			 FROM 
+				m_tbl_orders AS t
+			WHERE t.nodeid = #{nodeId}
+			    AND t.serialNum = #{serialNum}
+			    AND t.orderCode = #{orderCode}
+			    AND t.orderValue = #{orderValue}
+			    AND t.isValid = 1
+		 ]]>
+	</select>
+
+	<!-- 存储下行命令包 -->
+	<insert id="storageOrder" parameterType="Dco_Order">
+        <![CDATA[
+		     INSERT INTO m_tbl_orders
+		            (nodeid,
+		             remoteAddress,
+		             remotePort,
+		             serialNum,
+		             submitTime,
+		             submitCount,  
+		             orderCode,
+		             orderValue,
+		             content)
+			VALUES (#{nodeId},
+			        #{remoteAddress},
+			        #{remotePort},
+			        #{serialNum},
+			        #{submitTime},
+			        #{submitCount},  
+			        #{orderCode},
+			        #{orderValue},
+			        #{orderStr})
+		 ]]>
+	</insert>
+
+	<!-- 更新指令包 -->
+	<update id="updateOrder" parameterType="Dco_Order">
+        <![CDATA[
+			UPDATE m_tbl_orders
+			SET nodeid = #{nodeId},
+			  remoteAddress = #{remoteAddress},
+			  remotePort = #{remotePort},
+			  serialNum = #{serialNum},
+			  submitTime = #{submitTime},
+			  submitCount = #{submitCount} + 1,
+			  orderCode = #{orderCode},
+			  orderValue = #{orderValue},
+			  content = #{orderStr}
+			WHERE orderId = #{orderId}
+		 ]]>
+	</update>
+
+
+
+	<!-- 获取网关ID -->
+	<select id="getGateWayByDeviceBean" parameterType="DeviceBean" resultType="DeviceBean">
+        <![CDATA[
+		     SELECT
+			  n.nodeid      AS deviceid,
+			  n.nodeType    AS deviceType,
+			  m.nodeVersion AS `version`,
+			  m.isControl   AS isControl,
+			  m.parentIP    AS parentid,
+			  m.childIP     AS selfid,
+			  m.feedbackIP  AS feedback,
+			  m.sequence    AS sequence,
+			  m.interval_i  AS `interval`,
+			  m.rssi        AS rssi,
+			  m.lqi         AS lqi,
+			  m.lowvoltage  AS voltage,
+			  m.anomaly     AS anomaly,
+			  m.remoteIp    AS remoteAddress,
+			  m.remotePort  AS remotePort
+			FROM m_nodeinfo AS n,
+			  m_nodeinfomemory AS m
+			WHERE n.nodeid = m.nodeid 
+				AND m.remoteIp=#{remoteAddress} 
+				AND m.childIP = #{parentid}
+		 ]]>
+	</select>
+
+
+	<!-- 获取异常命令列表 -->
+	<select id="getExceptionOrders" resultType="Dco_Order">
+        <![CDATA[
+		     SELECT
+			  orderId       AS orderId,
+			  nodeid        AS nodeId,
+			  remoteAddress AS remoteAddress,
+			  remotePort    AS remotePort,
+			  serialNum     AS serialNum,
+			  submitTime    AS submitTime,
+			  submitCount   AS submitCount,
+			  currentState  AS currentState,
+			  isValid       AS isValid,
+			  orderCode     AS orderCode,
+			  orderValue    AS orderValue,
+			  content       AS orderStr
+			FROM m_tbl_orders 
+			WHERE isValid = 1
+		 ]]>
+	</select>
+
+	<!-- 设置命令失效 -->
+	<update id="setOrderInvalid" parameterType="java.lang.Integer">
+        <![CDATA[
+			UPDATE
+				m_tbl_orders 
+			SET 
+				isValid = 0 
+			WHERE 
+				orderId = #{value}
+		 ]]>
+	</update>
+
+	<!-- 获取下行命令的属性 -->
+	<select id="getOrderPropertyFromDB" parameterType="java.lang.Integer" resultType="Dco_Order">
+        <![CDATA[
+		     SELECT
+			  orderId       AS orderId,
+			  nodeid        AS nodeId,
+			  remoteAddress AS remoteAddress,
+			  remotePort    AS remotePort,
+			  serialNum     AS serialNum,
+			  submitTime    AS submitTime,
+			  submitCount   AS submitCount,
+			  sendTime      AS sendTime,
+			  currentState  AS currentState,
+			  isValid       AS isValid,
+			  orderValue    AS orderValue,
+			  orderCode     AS orderCode,
+			  content       AS orderStr
+			FROM m_tbl_orders AS t
+			WHERE t.orderId = #{value}
+		 ]]>
+	</select>
+
+	<!-- 是否存在有效命令 -->
+	<select id="isActiveOrder" parameterType="java.lang.String" resultType="Dco_Order">
+        <![CDATA[
+		    SELECT
+			  orderId     AS orderId,
+			  submitCount AS submitCount
+			FROM m_tbl_orders AS t
+			WHERE t.isValid = 1
+			    AND t.serialnum = #{value}
+			ORDER BY orderId DESC
+			LIMIT 1
+		 ]]>
+	</select>
+	<!-- 
+		<select id="isActiveOrder" parameterClass="java.lang.String"
+		resultClass="Dco_Order">
+		<![CDATA[
+		SELECT
+		COUNT(1) 		AS submitCount,
+		MAX(orderId)  AS orderId
+		FROM m_tbl_orders AS t
+		WHERE t.isValid = 1
+		AND t.serialnum =#{value}
+		]]>
+		</select>
+	-->
+
+	<!-- 修改命令执行的反馈码[01成功/02失败/03送达成功/FF路径不通] -->
+	<update id="updateState" parameterType="Dco_Order">
+        <![CDATA[
+			UPDATE
+				m_tbl_orders 
+			SET 
+				currentState = #{currentState} 
+			WHERE 
+				orderId = #{orderId}
+		 ]]>
+	</update>
+
+	<!-- 获取下行命令的目标ID -->
+	<select id="getSelfIdByOrderId" parameterType="java.lang.Integer" resultType="java.lang.String">
+        <![CDATA[
+		     SELECT
+			  nodeid AS nodeid
+			FROM m_tbl_orders
+			WHERE orderId =#{value} 
+		 ]]>
+	</select>
+
+	<!-- 更新接收数据次数 -->
+	<update id="updateDataReciveCount" parameterType="Dco_Order">
+        <![CDATA[
+			UPDATE
+				`m_tbl_link_${nodeId}` 
+			SET 
+				count = count+1 
+			WHERE 
+				DATE_FORMAT(stamp,'%Y-%m-%d %H:00:00') = `${sendTime}`
+		 ]]>
+	</update>
+
+
+
+</mapper>

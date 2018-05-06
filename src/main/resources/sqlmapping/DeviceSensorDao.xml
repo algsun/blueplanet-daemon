@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="DeviceSensor">
+
+    <select id="findByDeviceIdAndSensorId" parameterType="java.util.Map" resultType="NodeSensor">
+        <![CDATA[
+        SELECT
+            `id`,
+            `nodeid`,
+            `sensorPhysicalid`,
+            `sensorPhysicalValue`,
+            `state`,
+            `stamp`,
+            `dataVersion`
+        FROM
+            `m_nodesensor`
+        WHERE
+            nodeid = #{deviceId} AND sensorPhysicalid = #{sensorId};
+        ]]>
+    </select>
+</mapper>

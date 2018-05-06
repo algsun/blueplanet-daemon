@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:51:59 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Threshold">
+
+    <select id="findThresholds" parameterType="string" resultType="Threshold">
+        <![CDATA[
+        SELECT
+          id,
+          locationId AS targetId,
+          sensorPhysicalId AS sensorId,
+          conditionType,
+          target,
+          floating
+        FROM
+          m_threshold ts
+        WHERE locationId = #{locationId};
+        ]]>
+    </select>
+
+    <insert id="appendThresholdAlarmHistory" parameterType="ThresholdAlarmHistory">
+        <![CDATA[
+        INSERT INTO `m_alarm_history`
+            (`id`,
+            `locationId`,
+            `sensorId`,
+            `factor`,
+            `siteId`,
+            `alarmTime`,
+            `state`)
+        VALUES
+            (#{id},
+            #{locationId},
+            #{sensorId},
+            #{factor},
+            #{siteId},
+            #{alarmTime},
+            #{state});
+        ]]>
+    </insert>
+
+    <!--<insert id="appendAlarmHistoryMeasure" parameterType="java.util.Map">-->
+        <!--<![CDATA[-->
+        <!--INSERT INTO m_history_measure-->
+        <!--(id, alarmHistoryId, measureId)-->
+        <!--VALUES-->
+        <!--(#{id}, #{alarmHistoryId}, #{measureId});-->
+        <!--]]>-->
+    <!--</insert>-->
+
+    <!--<select id="findMeasuresByZoneId" parameterType="string" resultType="Measure">-->
+        <!--<![CDATA[-->
+        <!--SELECT-->
+        <!--m.id,-->
+        <!--zm.zoneId,-->
+        <!--m.description AS `desc`-->
+        <!--FROM m_measure m-->
+        <!--INNER JOIN m_zone_measure AS zm-->
+            <!--ON m.id = zm.measureId-->
+        <!--WHERE zm.zoneId = #{value}-->
+        <!--ORDER BY createTime-->
+        <!--]]>-->
+    <!--</select>-->
+
+    <!-- 查询m_threshold，上下限 -->
+    <!--<select id="getThreshold" parameterType="java.lang.String" resultType="ThresholdCacheBean">-->
+        <!--<![CDATA[-->
+            <!--SELECT-->
+              <!--mtu.userId AS userId,-->
+              <!--tu.mobile AS mobile,-->
+              <!--tz.zoneId AS zoneId,-->
+              <!--tz.zoneName AS zoneName,-->
+              <!--mt.sensorPhysicalid AS sensorPhysicalid,-->
+              <!--ms.cn_name AS sensorName,-->
+              <!--ms.units AS units,-->
+              <!--mt.`maxValue` AS `maxValue`,-->
+              <!--mt.`minValue` AS `minValue`,-->
+              <!--mto.beforeTime AS beforeTime,-->
+              <!--mto.afterTime AS afterTime,-->
+              <!--mto.isNoDisturb AS isNoDisturb,-->
+              <!--mto.notificationType AS notificationType-->
+            <!--FROM-->
+              <!--m_threshold_user mtu-->
+              <!--INNER JOIN m_threshold_sensor mt-->
+                <!--ON mtu.zoneId = mt.zoneId-->
+              <!--INNER JOIN t_users tu-->
+                <!--ON mtu.userId = tu.id-->
+              <!--INNER JOIN t_zone tz-->
+                <!--ON mtu.zoneId = tz.zoneId-->
+              <!--LEFT JOIN m_sensorinfo ms-->
+                <!--ON mt.sensorPhysicalid = ms.sensorPhysicalid-->
+              <!--LEFT JOIN m_threshold mto-->
+                <!--ON mtu.thresholdOptionId = mto.id-->
+            <!--WHERE mt.zoneId=#{zoneId}-->
+		 <!--]]>-->
+	<!--</select>-->
+
+    <!-- 添加或更新设备检测指标阈值 -->
+    <insert id="addOrUpdateThreshold" parameterType="Threshold">
+        <![CDATA[
+			INSERT INTO m_threshold_sensor (nodeId, sensorPhysicalid, `maxValue`, `minValue`)
+            VALUES(#{deviceId}, #{sensorId}, #{maxValue}, #{minValue})
+            ON DUPLICATE KEY UPDATE `maxValue` = #{maxValue}, `minValue` = #{minValue}
+        ]]>
+    </insert>
+</mapper>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!--Converted at: Fri Jul 19 15:52:00 CST 2013-->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Base">
+
+	<!-- 判断表是否存在 -->
+	<select id="isExistTable" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        <![CDATA[
+		     select fun_isExistTable(#{value}) as fun
+		 ]]>
+	</select>
+
+	<!-- 获取节点列表 -->
+	<resultMap id="getDeviceListResultMap" type="java.util.HashMap">
+		<result property="nodeId" column="nodeid" javaType="String"/>
+		<result property="type" column="nodeType" javaType="Integer"/>
+	</resultMap>
+	<select id="getDeviceList" resultMap="getDeviceListResultMap">
+        <![CDATA[
+		     SELECT
+			   nodeid,
+			   nodeType
+			FROM m_nodeinfo 
+		 ]]>
+	</select>
+
+	<!-- 获取节点的传感信息(为了解决同一节点传感信息发生变更的需求) -->
+	<select id="getDeviceSensor" parameterType="java.lang.String" resultType="NodeSensor">
+        <![CDATA[
+			SELECT
+			    id                AS id,
+				nodeid 			  AS nodeid,
+				sensorPhysicalid  AS sensorPhysicalid
+			FROM
+				m_nodesensor
+			WHERE
+				nodeid = #{value}
+		 ]]>
+	</select>
+
+    <select id="getLocationSensor" parameterType="java.lang.String" resultType="LocationSensor">
+        <![CDATA[
+			SELECT
+			    id                AS id,
+				locationId 			  AS locationId,
+				sensorPhysicalid  AS sensorPhysicalid
+			FROM
+				m_location_sensor
+			WHERE
+				locationId = #{value}
+		 ]]>
+	</select>
+
+	<!-- ================================================================================== -->
+	<!-- 创建sd卡操作记录 -->
+	<parameterMap id="insertSdCardRecord-param" type="java.util.HashMap">
+		<parameter property="deviceid"/>
+		<parameter property="step"/>
+	</parameterMap>
+	<insert id="insertSdCardRecord" parameterMap="insertSdCardRecord-param">
+        <![CDATA[
+		    insert into
+				m_tbl_sdcardrecord(deviceid,step) 
+				            values(?,?)
+		 ]]>
+	</insert>
+
+	<!-- 获取sd卡操作记录表最新记录ID -->
+	<select id="getSdCardRecordID" resultType="java.lang.Integer">
+        <![CDATA[
+		    SELECT
+				id 
+			FROM 
+				m_tbl_sdcardrecord 
+			ORDER BY id DESC 
+			LIMIT 0,1
+		 ]]>
+	</select>
+
+	<!-- 更新sd卡操作步骤 -->
+	<parameterMap id="updateSdCardRecordStep-param" type="java.util.HashMap">
+		<parameter property="step"/>
+		<parameter property="recordid"/>
+	</parameterMap>
+	<update id="updateSdCardRecordStep" parameterMap="updateSdCardRecordStep-param">
+        <![CDATA[
+			update
+				m_tbl_sdcardrecord 
+			set 
+				step = ? 
+			where 
+				id = ?
+		 ]]>
+	</update>
+
+	<!-- 删除Sd卡操作记录 -->
+	<delete id="deleteSdCardRecord" parameterType="java.lang.Integer">
+        <![CDATA[
+		    DELETE FROM
+				m_tbl_sdcardrecord 
+			WHERE 
+				id = #{value}
+		 ]]>
+	</delete>
+
+	<!-- 获取sd卡操作记录号的最新操作时间戳 -->
+	<select id="getSdCardTimeStampById" parameterType="java.lang.Integer" resultType="java.sql.Timestamp">
+        <![CDATA[
+		    SELECT
+				ms_timestamp 
+			FROM 
+				m_tbl_sdcardrecord 
+			WHERE 
+				id = #{value}
+		 ]]>
+	</select>
+
+
+
+	<!-- ================================================================================== -->
+
+    <select id="getGateways" parameterType="java.lang.String" resultType="java.lang.String">
+        <![CDATA[
+            SELECT
+              m.nodeid
+            FROM
+              m_nodeinfo m
+            WHERE m.`nodeType` = 7
+              AND m.`siteId` = #{siteId}
+		 ]]>
+	</select>
+
+</mapper>
